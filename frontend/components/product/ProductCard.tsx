@@ -14,8 +14,21 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
       whileHover={{ y: -2, borderColor: 'rgba(59,130,246,0.25)' }}
       transition={{ duration: 0.2 }}
       onClick={onClick}
-      className={`bg-white/[0.03] rounded-2xl border border-white/10 p-5 flex flex-col gap-3 ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`bg-white/[0.03] rounded-2xl border border-white/10 overflow-hidden flex flex-col gap-3 ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
     >
+      {/* Product Image */}
+      {product.image_url && (
+        <div className="w-full h-40 bg-white/[0.03] overflow-hidden">
+          <img
+            src={product.image_url}
+            alt={product.title}
+            className="w-full h-full object-contain p-2"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        </div>
+      )}
+
+      <div className="px-5 pb-5 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-medium text-white text-sm leading-snug line-clamp-2 flex-1">
@@ -76,6 +89,7 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
       <p className="text-xs text-slate-700">
         Updated {new Date(product.last_scraped_at).toLocaleDateString()}
       </p>
+      </div>
     </motion.div>
   )
 }
