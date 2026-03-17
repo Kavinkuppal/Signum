@@ -1,0 +1,312 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="750" viewBox="0 0 1100 750" font-family="Arial, sans-serif">
+
+  <!-- Definitions: arrowhead markers -->
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#374151"/>
+    </marker>
+    <marker id="arrow-dashed" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#ef4444"/>
+    </marker>
+  </defs>
+
+  <!-- Overall background -->
+  <rect width="1100" height="750" fill="#f0f2f5"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       COLUMN BACKGROUND BANDS
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- Channels band (light blue) -->
+  <rect x="195" y="50" width="165" height="670" rx="8" fill="#dbeafe" opacity="0.7"/>
+
+  <!-- Frontend/UX band (mint/teal) -->
+  <rect x="370" y="50" width="175" height="670" rx="8" fill="#ccfbf1" opacity="0.7"/>
+
+  <!-- Middleware/API band (light yellow) -->
+  <rect x="555" y="50" width="195" height="670" rx="8" fill="#fef9c3" opacity="0.7"/>
+
+  <!-- Back End Resources band (light purple) -->
+  <rect x="760" y="50" width="310" height="670" rx="8" fill="#ede9fe" opacity="0.7"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       COLUMN HEADER LABELS
+  ═══════════════════════════════════════════════════════ -->
+
+  <text x="97" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2937">Users</text>
+
+  <text x="277" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e40af">Channels</text>
+
+  <text x="457" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f766e">Frontend / UX</text>
+
+  <text x="652" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#b45309">Middleware / API</text>
+
+  <text x="915" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#6d28d9">Back End Resources</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       ACTORS (left side)
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- Sign Shop Owner (person icon) ~y=175 -->
+  <g transform="translate(97,160)">
+    <!-- head -->
+    <circle cx="0" cy="-22" r="12" fill="#4b5563" stroke="#374151" stroke-width="1.5"/>
+    <!-- body -->
+    <path d="M-14,0 Q-14,-14 0,-14 Q14,-14 14,0 L14,22 L-14,22 Z" fill="#4b5563" stroke="#374151" stroke-width="1.5"/>
+    <!-- arms -->
+    <line x1="-14" y1="4" x2="-26" y2="18" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+    <line x1="14" y1="4" x2="26" y2="18" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+    <!-- legs -->
+    <line x1="-6" y1="22" x2="-8" y2="40" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+    <line x1="6" y1="22" x2="8" y2="40" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text x="97" y="225" text-anchor="middle" font-size="11" fill="#1f2937" font-weight="bold">Sign Shop Owner</text>
+
+  <!-- Operations Manager (person icon) ~y=360 -->
+  <g transform="translate(97,345)">
+    <circle cx="0" cy="-22" r="12" fill="#6b7280" stroke="#374151" stroke-width="1.5"/>
+    <path d="M-14,0 Q-14,-14 0,-14 Q14,-14 14,0 L14,22 L-14,22 Z" fill="#6b7280" stroke="#374151" stroke-width="1.5"/>
+    <line x1="-14" y1="4" x2="-26" y2="18" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+    <line x1="14" y1="4" x2="26" y2="18" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+    <line x1="-6" y1="22" x2="-8" y2="40" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+    <line x1="6" y1="22" x2="8" y2="40" stroke="#374151" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <text x="97" y="408" text-anchor="middle" font-size="11" fill="#1f2937" font-weight="bold">Operations Manager</text>
+
+  <!-- Admin / System (gear icon) ~y=560 -->
+  <g transform="translate(97,555)">
+    <!-- gear shape -->
+    <circle cx="0" cy="0" r="10" fill="none" stroke="#374151" stroke-width="3"/>
+    <circle cx="0" cy="0" r="4" fill="#374151"/>
+    <!-- gear teeth -->
+    <rect x="-3" y="-18" width="6" height="8" rx="1" fill="#374151"/>
+    <rect x="-3" y="10" width="6" height="8" rx="1" fill="#374151"/>
+    <rect x="10" y="-3" width="8" height="6" rx="1" fill="#374151"/>
+    <rect x="-18" y="-3" width="8" height="6" rx="1" fill="#374151"/>
+    <!-- diagonal teeth -->
+    <rect x="6" y="-16" width="6" height="8" rx="1" fill="#374151" transform="rotate(45,9,-12)"/>
+    <rect x="-12" y="-16" width="6" height="8" rx="1" fill="#374151" transform="rotate(-45,-9,-12)"/>
+    <rect x="6" y="8" width="6" height="8" rx="1" fill="#374151" transform="rotate(-45,9,12)"/>
+    <rect x="-12" y="8" width="6" height="8" rx="1" fill="#374151" transform="rotate(45,-9,12)"/>
+  </g>
+  <text x="97" y="590" text-anchor="middle" font-size="11" fill="#1f2937" font-weight="bold">Admin / System</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CHANNELS (column 2)
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- Web Browser box (~y=190) -->
+  <rect x="205" y="168" width="145" height="52" rx="8" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+  <!-- desktop monitor icon -->
+  <rect x="215" y="178" width="22" height="16" rx="2" fill="none" stroke="#1e40af" stroke-width="1.5"/>
+  <line x1="226" y1="194" x2="226" y2="200" stroke="#1e40af" stroke-width="1.5"/>
+  <line x1="220" y1="200" x2="232" y2="200" stroke="#1e40af" stroke-width="1.5"/>
+  <text x="277" y="198" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">Web Browser</text>
+  <text x="277" y="211" text-anchor="middle" font-size="10" fill="#374151">(Desktop)</text>
+
+  <!-- Mobile Browser box (~y=335) -->
+  <rect x="205" y="315" width="145" height="52" rx="8" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+  <!-- mobile icon -->
+  <rect x="218" y="323" width="14" height="22" rx="3" fill="none" stroke="#1e40af" stroke-width="1.5"/>
+  <circle cx="225" cy="340" r="1.5" fill="#1e40af"/>
+  <text x="277" y="342" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">Mobile Browser</text>
+  <text x="277" y="355" text-anchor="middle" font-size="10" fill="#374151">(Responsive)</text>
+
+  <!-- Scheduled Cron box (~y=535) -->
+  <rect x="205" y="515" width="145" height="52" rx="8" fill="#bfdbfe" stroke="#3b82f6" stroke-width="1.5"/>
+  <!-- clock icon -->
+  <circle cx="220" cy="541" r="11" fill="none" stroke="#1e40af" stroke-width="1.5"/>
+  <line x1="220" y1="534" x2="220" y2="541" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="220" y1="541" x2="226" y2="545" stroke="#1e40af" stroke-width="1.5" stroke-linecap="round"/>
+  <text x="277" y="538" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e40af">Scheduled Cron</text>
+  <text x="277" y="551" text-anchor="middle" font-size="10" fill="#374151">(APScheduler)</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FRONTEND / UX (column 3, teal boxes)
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- Dashboard & Projects (~y=155) -->
+  <rect x="378" y="140" width="159" height="48" rx="8" fill="#0d9488" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="457" y="161" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Dashboard &amp;</text>
+  <text x="457" y="177" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Projects</text>
+
+  <!-- Product Search & Compare (~y=240) -->
+  <rect x="378" y="225" width="159" height="48" rx="8" fill="#0d9488" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="457" y="245" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Product Search</text>
+  <text x="457" y="261" text-anchor="middle" font-size="12" font-weight="bold" fill="white">&amp; Compare</text>
+
+  <!-- Inventory Ledger (~y=325) -->
+  <rect x="378" y="310" width="159" height="48" rx="8" fill="#0d9488" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="457" y="330" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Inventory</text>
+  <text x="457" y="346" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Ledger</text>
+
+  <!-- Settings & Connections (~y=410) -->
+  <rect x="378" y="395" width="159" height="48" rx="8" fill="#0d9488" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="457" y="415" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Settings &amp;</text>
+  <text x="457" y="431" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Connections</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MIDDLEWARE / API (column 4, amber boxes)
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- FastAPI REST (v1) (~y=175) -->
+  <rect x="563" y="155" width="179" height="48" rx="8" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+  <text x="652" y="175" text-anchor="middle" font-size="12" font-weight="bold" fill="white">FastAPI REST</text>
+  <text x="652" y="191" text-anchor="middle" font-size="12" font-weight="bold" fill="white">(v1 Endpoints)</text>
+
+  <!-- BOM Matching Engine (~y=265) -->
+  <rect x="563" y="245" width="179" height="48" rx="8" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+  <text x="652" y="265" text-anchor="middle" font-size="12" font-weight="bold" fill="white">BOM Matching</text>
+  <text x="652" y="281" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Engine</text>
+
+  <!-- Price Normalization Engine (~y=355) -->
+  <rect x="563" y="335" width="179" height="48" rx="8" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+  <text x="652" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Price Normalization</text>
+  <text x="652" y="371" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Engine</text>
+
+  <!-- Scrape Orchestrator (~y=530) -->
+  <rect x="563" y="510" width="179" height="48" rx="8" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+  <text x="652" y="530" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Scrape Orchestrator</text>
+  <text x="652" y="546" text-anchor="middle" font-size="12" font-weight="bold" fill="white">(APScheduler)</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BACK END RESOURCES (column 5, purple boxes)
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- PostgreSQL Database (~y=165) -->
+  <rect x="768" y="140" width="160" height="52" rx="8" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+  <!-- DB cylinder icon -->
+  <ellipse cx="789" cy="160" rx="9" ry="4" fill="none" stroke="white" stroke-width="1.2"/>
+  <line x1="780" y1="160" x2="780" y2="178" stroke="white" stroke-width="1.2"/>
+  <line x1="798" y1="160" x2="798" y2="178" stroke="white" stroke-width="1.2"/>
+  <ellipse cx="789" cy="178" rx="9" ry="4" fill="none" stroke="white" stroke-width="1.2"/>
+  <ellipse cx="789" cy="169" rx="9" ry="4" fill="none" stroke="white" stroke-width="1" opacity="0.5"/>
+  <text x="868" y="161" text-anchor="middle" font-size="12" font-weight="bold" fill="white">PostgreSQL</text>
+  <text x="868" y="177" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Database</text>
+
+  <!-- Tier 1 Scrapers (~y=285) -->
+  <rect x="768" y="265" width="290" height="60" rx="8" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+  <text x="913" y="285" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Tier 1 Scrapers</text>
+  <text x="913" y="301" text-anchor="middle" font-size="10" fill="#e9d5ff">Blue Ridge · McLogan · USCutter</text>
+  <text x="913" y="316" text-anchor="middle" font-size="9" fill="#c4b5fd">(Playwright Authenticated Sessions)</text>
+
+  <!-- Tier 2 Scrapers (~y=385) — dashed/future -->
+  <rect x="768" y="365" width="290" height="60" rx="8" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="7,4"/>
+  <text x="913" y="385" text-anchor="middle" font-size="12" font-weight="bold" fill="#ef4444">Tier 2 Scrapers</text>
+  <text x="913" y="401" text-anchor="middle" font-size="10" fill="#ef4444">Grimco · Fellers · Glantz</text>
+  <text x="913" y="416" text-anchor="middle" font-size="9" fill="#f87171">(Planned — Phase 2)</text>
+
+  <!-- Price History Store (~y=535) -->
+  <rect x="768" y="510" width="160" height="52" rx="8" fill="#7c3aed" stroke="#6d28d9" stroke-width="1.5"/>
+  <!-- small chart icon -->
+  <polyline points="779,545 786,535 793,540 800,528" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="878" y="531" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Price History</text>
+  <text x="878" y="547" text-anchor="middle" font-size="12" font-weight="bold" fill="white">Store</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       CONNECTING LINES WITH ARROWS
+  ═══════════════════════════════════════════════════════ -->
+
+  <!-- ── Actor → Channel ── -->
+
+  <!-- Sign Shop Owner → Web Browser -->
+  <line x1="127" y1="175" x2="203" y2="192" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Operations Manager → Web Browser -->
+  <line x1="127" y1="355" x2="203" y2="210" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Operations Manager → Mobile Browser -->
+  <line x1="127" y1="360" x2="203" y2="341" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Admin/System → Scheduled Cron -->
+  <line x1="127" y1="560" x2="203" y2="541" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ── Channel → Frontend ── -->
+
+  <!-- Web Browser → Dashboard & Projects -->
+  <line x1="350" y1="188" x2="376" y2="166" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Web Browser → Product Search & Compare -->
+  <line x1="350" y1="196" x2="376" y2="245" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Mobile Browser → Dashboard & Projects -->
+  <line x1="350" y1="333" x2="376" y2="174" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Mobile Browser → Inventory Ledger -->
+  <line x1="350" y1="341" x2="376" y2="334" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ── Frontend → Middleware ── -->
+
+  <!-- Dashboard & Projects → FastAPI REST -->
+  <line x1="537" y1="166" x2="561" y2="175" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Product Search & Compare → FastAPI REST -->
+  <line x1="537" y1="249" x2="561" y2="190" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Dashboard & Projects → BOM Matching Engine -->
+  <line x1="537" y1="173" x2="561" y2="263" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Product Search & Compare → Price Normalization Engine -->
+  <line x1="537" y1="257" x2="561" y2="351" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Inventory Ledger → FastAPI REST -->
+  <line x1="537" y1="334" x2="561" y2="192" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Settings & Connections → FastAPI REST -->
+  <line x1="537" y1="419" x2="561" y2="195" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Scheduled Cron → Scrape Orchestrator -->
+  <line x1="350" y1="541" x2="561" y2="534" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ── Middleware → Back End ── -->
+
+  <!-- FastAPI REST → PostgreSQL -->
+  <line x1="742" y1="175" x2="766" y2="168" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- BOM Matching Engine → PostgreSQL -->
+  <line x1="742" y1="265" x2="766" y2="188" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Price Normalization Engine → PostgreSQL -->
+  <line x1="742" y1="355" x2="766" y2="190" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+
+  <!-- Scrape Orchestrator → Tier 1 Scrapers -->
+  <line x1="742" y1="528" x2="766" y2="295" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Scrape Orchestrator → Tier 2 Scrapers (dashed/future) -->
+  <line x1="742" y1="540" x2="766" y2="395" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-dashed)"/>
+
+  <!-- Scrape Orchestrator → Price History Store -->
+  <line x1="652" y1="558" x2="766" y2="536" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Tier 1 Scrapers → PostgreSQL -->
+  <line x1="913" y1="265" x2="878" y2="192" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       LEGEND
+  ═══════════════════════════════════════════════════════ -->
+
+  <rect x="20" y="660" width="450" height="60" rx="6" fill="white" stroke="#d1d5db" stroke-width="1"/>
+  <text x="35" y="677" font-size="11" font-weight="bold" fill="#374151">Legend:</text>
+
+  <!-- solid line -->
+  <line x1="90" y1="673" x2="130" y2="673" stroke="#374151" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="135" y="677" font-size="10" fill="#374151">Primary data flow</text>
+
+  <!-- dashed gray line -->
+  <line x1="90" y1="693" x2="130" y2="693" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <text x="135" y="697" font-size="10" fill="#374151">Secondary / indirect flow</text>
+
+  <!-- dashed red line -->
+  <line x1="260" y1="673" x2="300" y2="673" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-dashed)"/>
+  <text x="305" y="677" font-size="10" fill="#ef4444">Future / planned (Phase 2)</text>
+
+  <!-- Tier 2 box indicator -->
+  <rect x="260" y="683" width="40" height="16" rx="3" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="305" y="695" font-size="10" fill="#ef4444">Planned component</text>
+
+  <!-- ═══════════════════════════════════════════════════════
+       TITLE
+  ═══════════════════════════════════════════════════════ -->
+  <text x="550" y="32" text-anchor="middle" font-size="17" font-weight="bold" fill="#111827">Signum — SignageProcurementPro: System Architecture</text>
+
+</svg>
