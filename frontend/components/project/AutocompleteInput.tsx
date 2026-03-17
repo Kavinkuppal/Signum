@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { apiUrl } from '@/lib/api'
 
 interface Suggestion {
   title: string
@@ -27,7 +28,7 @@ export default function AutocompleteInput({ value, onChange, placeholder, classN
     if (q.trim().length < 2) { setSuggestions([]); setOpen(false); return }
     setLoading(true)
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/products/autocomplete?q=${encodeURIComponent(q)}&limit=8`)
+      const res = await fetch(`${apiUrl('/products/autocomplete')}?q=${encodeURIComponent(q)}&limit=8`)
       const data = await res.json()
       setSuggestions(data)
       setOpen(data.length > 0)
