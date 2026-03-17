@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '@/components/layout/Navbar'
@@ -12,12 +12,18 @@ import type { Product, ProductFilters } from '@/types'
 
 export default function SearchPage() {
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState<ProductFilters>({})
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
   const { data, isLoading } = useQuery({
-    queryKey: ['products', search, filters],
-    queryFn: () => api.getProducts({ search, ...filters }),
+    queryKey: ['products', debouncedSearch, filters],
+    queryFn: () => api.getProducts({ search: debouncedSearch, ...filters }),
     placeholderData: (prev) => prev,
   })
 
