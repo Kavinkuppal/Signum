@@ -47,7 +47,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('apiUrl('/scrape/status')')
+        const res = await fetch(apiUrl('/scrape/status'))
         const data = await res.json()
         setScrapeStatus(data)
       } catch {}
@@ -59,12 +59,12 @@ export default function SettingsPage() {
     setScraping(true)
     setScrapeStarted(false)
     try {
-      await fetch('apiUrl('/scrape/run/all')', { method: 'POST' })
+      await fetch(apiUrl('/scrape/run/all'), { method: 'POST' })
       setScrapeStarted(true)
       // Poll status after a moment
       setTimeout(async () => {
         try {
-          const res = await fetch('apiUrl('/scrape/status')')
+          const res = await fetch(apiUrl('/scrape/status'))
           const data = await res.json()
           setScrapeStatus(data)
         } catch {}
@@ -78,7 +78,7 @@ export default function SettingsPage() {
   const handleSeedData = async () => {
     setSeeding(true)
     try {
-      await fetch('apiUrl('/demo/seed')', { method: 'POST' })
+      await fetch(apiUrl('/demo/seed'), { method: 'POST' })
       setSeeded(true)
       setTimeout(() => setSeeded(false), 3000)
     } catch {}
