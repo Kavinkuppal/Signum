@@ -1,31 +1,44 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '@/components/layout/Navbar'
 import FilterSidebar from '@/components/filters/FilterSidebar'
 import ProductCard from '@/components/product/ProductCard'
 import ProductDetailModal from '@/components/product/ProductDetailModal'
-import { api } from '@/lib/api'
-import type { Product, ProductFilters } from '@/types'
+import { apiUrl } from '@/lib/api'
+import type { Product, ProductFilters, ProductsResponse } from '@/types'
 
 export default function SearchPage() {
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filters, setFilters] = useState<ProductFilters>({})
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [data, setData] = useState<ProductsResponse | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    const timer = setTimeout(async () => {
+      setIsLoading(true)
+      try {
+        const params = new URLSearchParams()
+        if (search) params.set('search', search)
+        if (filters.material_category) params.set('material_category', filters.material_category)
+        if (filters.supplier) params.set('supplier', filters.supplier)
+        if (filters.min_price != null) params.set('min_price', String(filters.min_price))
+        if (filters.max_price != null) params.set('max_price', String(filters.max_price))
+        if (filters.in_stock != null) params.set('in_stock', String(filters.in_stock))
+        if (filters.brand) params.set('brand', filters.brand)
+        const res = await fetch(`${apiUrl('/products')}?${params}`)
+        const json = await res.json()
+        setData(json)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setIsLoading(false)
+      }
+    }, search ? 300 : 0)
     return () => clearTimeout(timer)
-  }, [search])
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['products', debouncedSearch, filters],
-    queryFn: () => api.getProducts({ search: debouncedSearch, ...filters }),
-    placeholderData: (prev) => prev,
-  })
+  }, [search, filters])
 
   return (
     <>
