@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import { useSession } from 'next-auth/react'
 import Navbar from '@/components/layout/Navbar'
 import Link from 'next/link'
+import { apiUrl, authHeaders } from '@/lib/api'
 
 interface Entry {
   id: string; project_id: string | null; material_name: string
@@ -13,13 +15,15 @@ interface Entry {
 }
 
 export default function InventoryPage() {
+  const { data: session } = useSession()
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/projects/inventory/ledger')
+    if (!session?.user?.email) return
+    fetch(apiUrl('/projects/inventory/ledger'), { headers: authHeaders(session.user.email) })
       .then(r => r.json()).then(setEntries).catch(console.error).finally(() => setLoading(false))
-  }, [])
+  }, [session])
 
   const totalSpend = entries.reduce((sum, e) => sum + (e.total_price || 0), 0)
 

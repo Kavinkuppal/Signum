@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { apiUrl } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '@/components/layout/Navbar'
 import ProductDetailModal from '@/components/product/ProductDetailModal'
@@ -231,7 +232,7 @@ export default function ComparePage() {
     queryFn: async () => {
       const params = new URLSearchParams({ search: submittedSearch })
       if (category) params.append('material_category', category)
-      const res = await fetch(`http://localhost:8000/api/v1/products/compare?${params}`)
+      const res = await fetch(apiUrl(`/products/compare?${params}`))
       if (!res.ok) throw new Error('Failed to fetch')
       return res.json()
     },

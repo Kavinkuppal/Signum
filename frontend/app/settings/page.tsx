@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '@/components/layout/Navbar'
+import { apiUrl } from '@/lib/api'
 
 const TIER1_SUPPLIERS = [
   {
@@ -46,7 +47,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/v1/scrape/status')
+        const res = await fetch('apiUrl('/scrape/status')')
         const data = await res.json()
         setScrapeStatus(data)
       } catch {}
@@ -58,12 +59,12 @@ export default function SettingsPage() {
     setScraping(true)
     setScrapeStarted(false)
     try {
-      await fetch('http://localhost:8000/api/v1/scrape/run/all', { method: 'POST' })
+      await fetch('apiUrl('/scrape/run/all')', { method: 'POST' })
       setScrapeStarted(true)
       // Poll status after a moment
       setTimeout(async () => {
         try {
-          const res = await fetch('http://localhost:8000/api/v1/scrape/status')
+          const res = await fetch('apiUrl('/scrape/status')')
           const data = await res.json()
           setScrapeStatus(data)
         } catch {}
@@ -77,7 +78,7 @@ export default function SettingsPage() {
   const handleSeedData = async () => {
     setSeeding(true)
     try {
-      await fetch('http://localhost:8000/api/v1/demo/seed', { method: 'POST' })
+      await fetch('apiUrl('/demo/seed')', { method: 'POST' })
       setSeeded(true)
       setTimeout(() => setSeeded(false), 3000)
     } catch {}

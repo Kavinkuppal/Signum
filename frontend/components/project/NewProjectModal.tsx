@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AutocompleteInput from './AutocompleteInput'
+import { apiUrl, authHeaders } from '@/lib/api'
 
 interface MaterialRow {
   id: string
@@ -19,6 +21,8 @@ interface Props {
 const UNITS = ['rolls', 'sheets', 'units', 'ft', 'ft²', 'lbs', 'boxes', 'packs']
 
 export default function NewProjectModal({ onClose, onCreated }: Props) {
+  const { data: session } = useSession()
+  const email = session?.user?.email
   const [step, setStep] = useState<'name' | 'materials' | 'loading' | 'review'>('name')
   const [projectName, setProjectName] = useState('')
   const [description, setDescription] = useState('')
@@ -49,9 +53,9 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
     setError('')
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/projects', {
+      const res = await fetch(apiUrl('/projects'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(email),
         body: JSON.stringify({
           name: projectName.trim(),
           description: description.trim() || null,
@@ -64,7 +68,7 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
       })
       const project = await res.json()
 
-      const bomRes = await fetch(`http://localhost:8000/api/v1/projects/${project.id}/bom`)
+      const bomRes = await fetch(apiUrl(`/projects/${project.id}/bom`), { headers: authHeaders(email) })
       const bomData = await bomRes.json()
       setBom({ ...bomData, projectName: projectName.trim() })
       setStep('review')

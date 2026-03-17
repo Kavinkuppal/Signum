@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
+import { apiUrl, authHeaders } from '@/lib/api'
 
 interface Product {
   id: string; title: string; supplier_name: string; price: number
@@ -32,6 +34,8 @@ const SUPPLIER_COLORS: Record<string, string> = {
 export default function ProjectPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const { data: session } = useSession()
+  const email = session?.user?.email
   const [items, setItems] = useState<ProjectItem[]>([])
   const [bom, setBom] = useState<BOMMatch[]>([])
   const [projectName, setProjectName] = useState('')
@@ -41,9 +45,10 @@ export default function ProjectPage() {
 
   const fetchData = useCallback(async () => {
     try {
+      const headers = authHeaders(email)
       const [projRes, bomRes] = await Promise.all([
-        fetch(`http://localhost:8000/api/v1/projects`),
-        fetch(`http://localhost:8000/api/v1/projects/${id}/bom`)
+        fetch(apiUrl('/projects'), { headers }),
+        fetch(apiUrl(`/projects/${id}/bom`), { headers }),
       ])
       const projects = await projRes.json()
       const project = projects.find((p: any) => p.id === id)
@@ -57,22 +62,24 @@ export default function ProjectPage() {
   useEffect(() => { fetchData() }, [fetchData])
 
   const stageItem = async (itemId: string, productId: string) => {
-    await fetch(`http://localhost:8000/api/v1/projects/${id}/items/${itemId}/stage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    await fetch(apiUrl(`/projects/${id}/items/${itemId}/stage`), {
+      method: 'POST', headers: authHeaders(email),
       body: JSON.stringify({ product_id: productId })
     })
     await fetchData()
   }
 
   const unstageItem = async (itemId: string) => {
-    await fetch(`http://localhost:8000/api/v1/projects/${id}/items/${itemId}/unstage`, { method: 'POST' })
+    await fetch(apiUrl(`/projects/${id}/items/${itemId}/unstage`), {
+      method: 'POST', headers: authHeaders(email),
+    })
     await fetchData()
   }
 
   const markPurchased = async (itemId: string, price?: number) => {
     setBuyingId(itemId)
-    await fetch(`http://localhost:8000/api/v1/projects/${id}/items/${itemId}/purchase`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+    await fetch(apiUrl(`/projects/${id}/items/${itemId}/purchase`), {
+      method: 'POST', headers: authHeaders(email),
       body: JSON.stringify({ price: price || null })
     })
     await fetchData()

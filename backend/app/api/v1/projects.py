@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func
 from app.core.database import get_db
+from app.core.deps import get_current_user_id
 from app.models.project import Project, ProjectItem, InventoryEntry
 from app.models.product import Product
 from app.schemas.project import (
@@ -13,13 +14,15 @@ from datetime import datetime, timezone
 from typing import List
 
 router = APIRouter()
-DEMO_USER = "demo-user"
 
 
 @router.get("", response_model=List[ProjectOut])
-async def list_projects(db: AsyncSession = Depends(get_db)):
+async def list_projects(
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
     result = await db.execute(
-        select(Project).where(Project.user_id == DEMO_USER).order_by(Project.created_at.desc())
+        select(Project).where(Project.user_id == user_id).order_by(Project.created_at.desc())
     )
     projects = result.scalars().all()
     out = []
@@ -44,8 +47,12 @@ async def list_projects(db: AsyncSession = Depends(get_db)):
 
 
 @router.post("", response_model=ProjectOut)
-async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)):
-    project = Project(user_id=DEMO_USER, name=body.name, description=body.description)
+async def create_project(
+    body: ProjectCreate,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    project = Project(user_id=user_id, name=body.name, description=body.description)
     db.add(project)
     await db.flush()
 
@@ -64,8 +71,11 @@ async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)
 
 
 @router.get("/{project_id}/bom", response_model=BOMResponse)
-async def get_bom(project_id: str, db: AsyncSession = Depends(get_db)):
-    """Find cheapest product matches for all materials in a project."""
+async def get_bom(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
     result = await db.execute(select(ProjectItem).where(ProjectItem.project_id == project_id))
     items = result.scalars().all()
 
@@ -95,8 +105,6 @@ async def get_bom(project_id: str, db: AsyncSession = Depends(get_db)):
         if best:
             estimated = round(best.price * item.quantity, 2)
             total += estimated
-
-            # Auto-select the best match
             item.selected_product_id = best.id
 
         matches.append(BOMMatchResult(
@@ -114,7 +122,11 @@ async def get_bom(project_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{project_id}/items/{item_id}/stage")
-async def stage_item(project_id: str, item_id: str, body: StageItemRequest, db: AsyncSession = Depends(get_db)):
+async def stage_item(
+    project_id: str, item_id: str, body: StageItemRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
     result = await db.execute(select(ProjectItem).where(ProjectItem.id == item_id, ProjectItem.project_id == project_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -126,7 +138,11 @@ async def stage_item(project_id: str, item_id: str, body: StageItemRequest, db: 
 
 
 @router.post("/{project_id}/items/{item_id}/unstage")
-async def unstage_item(project_id: str, item_id: str, db: AsyncSession = Depends(get_db)):
+async def unstage_item(
+    project_id: str, item_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
     result = await db.execute(select(ProjectItem).where(ProjectItem.id == item_id, ProjectItem.project_id == project_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -137,7 +153,11 @@ async def unstage_item(project_id: str, item_id: str, db: AsyncSession = Depends
 
 
 @router.post("/{project_id}/items/{item_id}/purchase")
-async def mark_purchased(project_id: str, item_id: str, body: MarkPurchasedRequest, db: AsyncSession = Depends(get_db)):
+async def mark_purchased(
+    project_id: str, item_id: str, body: MarkPurchasedRequest,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
     result = await db.execute(select(ProjectItem).where(ProjectItem.id == item_id, ProjectItem.project_id == project_id))
     item = result.scalar_one_or_none()
     if not item:
@@ -153,7 +173,7 @@ async def mark_purchased(project_id: str, item_id: str, body: MarkPurchasedReque
         prod = prod_result.scalar_one_or_none()
 
     entry = InventoryEntry(
-        user_id=DEMO_USER,
+        user_id=user_id,
         project_id=project_id,
         project_item_id=item.id,
         product_id=item.selected_product_id,
@@ -171,8 +191,11 @@ async def mark_purchased(project_id: str, item_id: str, body: MarkPurchasedReque
 
 
 @router.get("/inventory/ledger", response_model=List[InventoryEntryOut])
-async def get_inventory(db: AsyncSession = Depends(get_db)):
+async def get_inventory(
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
     result = await db.execute(
-        select(InventoryEntry).where(InventoryEntry.user_id == DEMO_USER).order_by(InventoryEntry.purchased_at.desc())
+        select(InventoryEntry).where(InventoryEntry.user_id == user_id).order_by(InventoryEntry.purchased_at.desc())
     )
     return [InventoryEntryOut.model_validate(e) for e in result.scalars().all()]

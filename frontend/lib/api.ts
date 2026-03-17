@@ -3,6 +3,14 @@ import type { ProductFilters, ProductsResponse } from '@/types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+export const apiUrl = (path: string) => `${BASE_URL}/api/v1${path}`
+
+export const authHeaders = (email: string | null | undefined, extra: Record<string, string> = {}) => ({
+  'Content-Type': 'application/json',
+  ...(email ? { 'X-User-Email': email } : {}),
+  ...extra,
+})
+
 const client = axios.create({
   baseURL: `${BASE_URL}/api/v1`,
   withCredentials: true,

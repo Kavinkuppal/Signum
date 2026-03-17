@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import NewProjectModal from '@/components/project/NewProjectModal'
+import { apiUrl, authHeaders } from '@/lib/api'
 
 interface Project {
   id: string
@@ -23,7 +24,7 @@ export default function DashboardClient({ user }: { user: any }) {
 
   const fetchProjects = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/projects')
+      const res = await fetch(apiUrl('/projects'), { headers: authHeaders(user?.email) })
       const data = await res.json()
       setProjects(data)
     } catch (e) { console.error(e) }
