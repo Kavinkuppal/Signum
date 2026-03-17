@@ -2,7 +2,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
 
-engine = create_async_engine(settings.async_database_url, echo=False)
+engine = create_async_engine(
+    settings.async_database_url,
+    echo=False,
+    connect_args={"ssl": "require"} if "railway" in settings.DATABASE_URL else {},
+)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
