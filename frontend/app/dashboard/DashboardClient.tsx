@@ -38,6 +38,13 @@ export default function DashboardClient({ user }: { user: any }) {
     router.push(`/projects/${projectId}`)
   }
 
+  const deleteProject = async (e: React.MouseEvent, projectId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    await fetch(apiUrl(`/projects/${projectId}`), { method: 'DELETE', headers: authHeaders(user?.email) })
+    setProjects(prev => prev.filter(p => p.id !== projectId))
+  }
+
   return (
     <div className="min-h-screen bg-[#060b18]">
       <Navbar />
@@ -118,14 +125,22 @@ export default function DashboardClient({ user }: { user: any }) {
                     <motion.div
                       whileHover={{ scale: 1.01, borderColor: 'rgba(59,130,246,0.3)' }}
                       transition={{ duration: 0.2 }}
-                      className="bg-white/[0.03] border border-white/10 rounded-2xl p-6 cursor-pointer"
+                      className="group bg-white/[0.03] border border-white/10 rounded-2xl p-6 cursor-pointer"
                     >
                       <div className="flex items-start justify-between mb-4">
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-white text-base">{project.name}</h3>
                           {project.description && <p className="text-sm text-gray-500 mt-1">{project.description}</p>}
                         </div>
-                        <svg className="w-5 h-5 text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={(e) => deleteProject(e, project.id)}
+                            className="text-gray-700 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                          <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 text-xs">
                         <span className="text-gray-500">{total} materials</span>
