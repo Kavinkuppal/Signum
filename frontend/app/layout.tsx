@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Signum — Signage Procurement Pro',
-  description: 'Centralized procurement for the signage industry',
+  description: 'Centralized procurement platform for the signage industry',
 }
 
 export default function RootLayout({
