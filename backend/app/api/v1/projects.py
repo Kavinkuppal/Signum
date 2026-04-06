@@ -190,6 +190,39 @@ async def mark_purchased(
     return {"status": "purchased"}
 
 
+@router.delete("/{project_id}/items/{item_id}")
+async def delete_project_item(
+    project_id: str, item_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    result = await db.execute(select(ProjectItem).where(ProjectItem.id == item_id, ProjectItem.project_id == project_id))
+    item = result.scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    await db.delete(item)
+    await db.commit()
+    return {"status": "deleted"}
+
+
+@router.delete("/{project_id}")
+async def delete_project(
+    project_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    result = await db.execute(select(Project).where(Project.id == project_id, Project.user_id == user_id))
+    project = result.scalar_one_or_none()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    items_result = await db.execute(select(ProjectItem).where(ProjectItem.project_id == project_id))
+    for item in items_result.scalars().all():
+        await db.delete(item)
+    await db.delete(project)
+    await db.commit()
+    return {"status": "deleted"}
+
+
 @router.get("/inventory/ledger", response_model=List[InventoryEntryOut])
 async def get_inventory(
     db: AsyncSession = Depends(get_db),
@@ -199,3 +232,18 @@ async def get_inventory(
         select(InventoryEntry).where(InventoryEntry.user_id == user_id).order_by(InventoryEntry.purchased_at.desc())
     )
     return [InventoryEntryOut.model_validate(e) for e in result.scalars().all()]
+
+
+@router.delete("/inventory/ledger/{entry_id}")
+async def delete_inventory_entry(
+    entry_id: str,
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    result = await db.execute(select(InventoryEntry).where(InventoryEntry.id == entry_id, InventoryEntry.user_id == user_id))
+    entry = result.scalar_one_or_none()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    await db.delete(entry)
+    await db.commit()
+    return {"status": "deleted"}

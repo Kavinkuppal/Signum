@@ -61,6 +61,13 @@ export default function ProjectPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const deleteItem = async (itemId: string) => {
+    await fetch(apiUrl(`/projects/${id}/items/${itemId}`), {
+      method: 'DELETE', headers: authHeaders(email),
+    })
+    await fetchData()
+  }
+
   const stageItem = async (itemId: string, productId: string) => {
     await fetch(apiUrl(`/projects/${id}/items/${itemId}/stage`), {
       method: 'POST', headers: authHeaders(email),
@@ -133,7 +140,7 @@ export default function ProjectPage() {
                   const isOpen = activeItemId === item.id
                   return (
                     <motion.div key={item.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden mb-2">
-                      <button onClick={() => setActiveItemId(isOpen ? null : item.id)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors">
+                      <button onClick={() => setActiveItemId(isOpen ? null : item.id)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors group">
                         <div>
                           <p className="text-sm font-semibold text-white">{item.material_name}</p>
                           <p className="text-xs text-gray-500 mt-0.5">× {item.quantity} {item.unit}</p>
@@ -148,6 +155,12 @@ export default function ProjectPage() {
                           <motion.span animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }} className="text-gray-600">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                           </motion.span>
+                          <span
+                            onClick={e => { e.stopPropagation(); deleteItem(item.id) }}
+                            className="text-gray-700 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </span>
                         </div>
                       </button>
 
@@ -193,7 +206,7 @@ export default function ProjectPage() {
               <div className="mt-4">
                 <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-3">Purchased ({purchasedItems.length})</p>
                 {purchasedItems.map(item => (
-                  <div key={item.id} className="flex items-center justify-between px-5 py-3 bg-white/[0.02] border border-white/5 rounded-xl mb-2 opacity-60">
+                  <div key={item.id} className="group flex items-center justify-between px-5 py-3 bg-white/[0.02] border border-white/5 rounded-xl mb-2 opacity-60 hover:opacity-80 transition-opacity">
                     <div>
                       <p className="text-sm text-gray-400">{item.material_name}</p>
                       <p className="text-xs text-gray-600">× {item.quantity} {item.unit}</p>
@@ -203,6 +216,9 @@ export default function ProjectPage() {
                       <span className="text-green-500">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                       </span>
+                      <button onClick={() => deleteItem(item.id)} className="text-gray-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </div>
                   </div>
                 ))}

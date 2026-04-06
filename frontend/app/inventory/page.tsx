@@ -19,11 +19,20 @@ export default function InventoryPage() {
   const [entries, setEntries] = useState<Entry[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchEntries = () => {
     if (!session?.user?.email) return
     fetch(apiUrl('/projects/inventory/ledger'), { headers: authHeaders(session.user.email) })
       .then(r => r.json()).then(setEntries).catch(console.error).finally(() => setLoading(false))
-  }, [session])
+  }
+
+  useEffect(() => { fetchEntries() }, [session])
+
+  const deleteEntry = async (id: string) => {
+    await fetch(apiUrl(`/projects/inventory/ledger/${id}`), {
+      method: 'DELETE', headers: authHeaders(session?.user?.email)
+    })
+    setEntries(prev => prev.filter(e => e.id !== id))
+  }
 
   const totalSpend = entries.reduce((sum, e) => sum + (e.total_price || 0), 0)
 
@@ -65,6 +74,7 @@ export default function InventoryPage() {
                   <th className="text-right px-4 py-4 font-medium">Unit Price</th>
                   <th className="text-right px-4 py-4 font-medium">Total</th>
                   <th className="text-right px-6 py-4 font-medium">Date</th>
+                  <th className="px-4 py-4" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -90,6 +100,11 @@ export default function InventoryPage() {
                     <td className="px-4 py-4 text-right font-semibold text-white">{entry.total_price ? `$${entry.total_price.toFixed(2)}` : '—'}</td>
                     <td className="px-6 py-4 text-right text-gray-500 text-xs">
                       {new Date(entry.purchased_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-4 py-4">
+                      <button onClick={() => deleteEntry(entry.id)} className="text-gray-700 hover:text-red-400 transition-colors">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
                     </td>
                   </motion.tr>
                 ))}
