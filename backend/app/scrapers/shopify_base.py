@@ -7,6 +7,122 @@ from app.services.product_service import upsert_product
 from datetime import datetime
 
 
+# ─── Shared normalization helpers ────────────────────────────────────────────
+
+def extract_dimensions(text: str) -> dict:
+    """
+    Extract product dimensions from a title/variant string.
+    Returns dict with optional keys: width, length (both in INCHES), thickness.
+
+    Handles:
+      - "54\" x 50yd"  →  width=54in, length=1800in
+      - "24in x 150ft" →  width=24in, length=1800in
+      - "48\" x 96\""  →  width=48in, length=96in
+      - "4' x 8'"      →  width=48in, length=96in
+      - "54-inch wide, 50 yard roll"
+      - "60\" wide x 25'"
+      - thickness: "3mm", ".040"
+    """
+    dims: dict = {}
+    t = text.strip()
+
+    # ── 1. Feet x Feet  (e.g. "4' x 8'", "2' x 4'") ─────────────────────
+    m = re.search(r"(\d+(?:\.\d+)?)\s*(?:ft|feet|')?\s*[xX×]\s*(\d+(?:\.\d+)?)\s*(?:ft|feet|')\b", t)
+    if m:
+        dims["width"] = float(m.group(1)) * 12
+        dims["length"] = float(m.group(2)) * 12
+        return dims
+
+    # ── 2. W (in/") x L (yd/ft/in)  — most common roll/sheet pattern ─────
+    # e.g. "54\" x 50yd", "24in x 150ft", "48\" x 96\"", "60 x 25ft"
+    m = re.search(
+        r'(\d+(?:\.\d+)?)\s*(?:"|in(?:ch(?:es)?)?)?\s*[xX×]\s*(\d+(?:\.\d+)?)\s*(yd|yard|yards?|ft|feet|foot|in|")?',
+        t, re.IGNORECASE
+    )
+    if m:
+        w = float(m.group(1))
+        l_val = float(m.group(2))
+        l_unit = (m.group(3) or "").lower().rstrip("s")
+
+        # Reject obviously non-dimension matches (e.g. "5-in-1", small voltages)
+        if w < 1 or l_val < 1:
+            pass
+        else:
+            if l_unit in ("yd", "yard"):
+                dims["length"] = l_val * 36
+            elif l_unit in ("ft", "feet", "foot"):
+                dims["length"] = l_val * 12
+            else:
+                dims["length"] = l_val  # assume inches
+            dims["width"] = w
+            return dims
+
+    # ── 3. "W-inch wide" + separate length  (e.g. "54-inch wide 50yd roll") ─
+    m_w = re.search(r'(\d+(?:\.\d+)?)\s*[\-\s]?(?:inch(?:es)?|in|")\s*wide', t, re.IGNORECASE)
+    m_l = re.search(r'(\d+(?:\.\d+)?)\s*-?\s*(yd|yard|yards?|ft|feet|linear\s*ft)', t, re.IGNORECASE)
+    if m_w and m_l:
+        dims["width"] = float(m_w.group(1))
+        l_val = float(m_l.group(1))
+        l_unit = m_l.group(2).lower()
+        if "yd" in l_unit or "yard" in l_unit:
+            dims["length"] = l_val * 36
+        else:
+            dims["length"] = l_val * 12
+        return dims
+
+    # ── 4. Width-only from inch marker (rolls/films without explicit length) ─
+    m_w2 = re.search(r'(\d+(?:\.\d+)?)\s*(?:"|in(?:ch(?:es)?)?)\b', t, re.IGNORECASE)
+    if m_w2 and float(m_w2.group(1)) >= 6:  # ignore tiny numbers like screws
+        dims["width"] = float(m_w2.group(1))
+
+    # ── Thickness ─────────────────────────────────────────────────────────
+    m_mm = re.search(r'(\d+(?:\.\d+)?)\s*mm\b', t, re.IGNORECASE)
+    if m_mm:
+        dims["thickness"] = float(m_mm.group(1))
+    else:
+        m_thou = re.search(r'(?<!\d)\.(0\d{2})\b', t)
+        if m_thou:
+            dims["thickness"] = float("0." + m_thou.group(1))
+
+    return dims
+
+
+def compute_normalized_price(price: float, dims: dict, title: str = "") -> tuple[float | None, str | None]:
+    """
+    Compute normalized price per standard unit.
+
+    Priority:
+      1. width + length → $/ft²   (rolls, sheets, films)
+      2. width only     → $/linear ft  (rolls sold by linear yard/ft)
+      3. no dims        → $/unit
+
+    Sanity check: if computed $/ft² is implausibly high (>$500) or low (<$0.001),
+    fall back to $/unit to avoid misleading comparisons.
+    """
+    width_in = dims.get("width")
+    length_in = dims.get("length")
+
+    if width_in and length_in and width_in > 0 and length_in > 0:
+        sq_in = width_in * length_in
+        sq_ft = sq_in / 144.0
+        if sq_ft > 0:
+            norm = round(price / sq_ft, 4)
+            # Sanity: $0.01–$500/ft² is realistic for signage materials
+            if 0.01 <= norm <= 500:
+                return norm, "ft²"
+
+    if width_in and width_in > 0 and not length_in:
+        lin_ft = width_in / 12.0
+        if lin_ft > 0:
+            norm = round(price / lin_ft, 4)
+            if 0.01 <= norm <= 10000:
+                return norm, "linear ft"
+
+    return None, None  # can't normalize — don't show misleading $/unit
+
+
+# ─── Shopify base scraper ─────────────────────────────────────────────────────
+
 class ShopifyScraper:
     """
     Base scraper for public Shopify stores.
@@ -16,7 +132,6 @@ class ShopifyScraper:
     base_url: str = ""
     collection: str = "all"
 
-    # Subclasses can override these for supplier-specific category/brand mapping
     CATEGORY_MAP: dict[str, str] = {}
 
     async def run(self) -> int:
@@ -46,7 +161,7 @@ class ShopifyScraper:
                     if len(products) < 250:
                         break
                     page += 1
-                    await asyncio.sleep(0.5)  # be polite
+                    await asyncio.sleep(0.5)
 
                 except Exception as e:
                     print(f"[{self.supplier_name}] Error on page {page}: {e}")
@@ -62,10 +177,6 @@ class ShopifyScraper:
         return total
 
     async def normalize_product(self, raw: dict) -> AsyncGenerator[dict, None]:
-        """
-        Convert a Shopify product JSON object into one normalized product dict per variant.
-        Subclasses can override for supplier-specific logic.
-        """
         title = raw.get("title", "").strip()
         brand = raw.get("vendor", "").strip() or None
         product_type = raw.get("product_type", "").strip()
@@ -73,7 +184,6 @@ class ShopifyScraper:
         product_url = f"{self.base_url}/products/{handle}"
         category = self._map_category(product_type, title)
 
-        # Extract image and description
         images = raw.get("images", [])
         image_url = images[0].get("src") if images else None
         body_html = raw.get("body_html", "") or ""
@@ -81,8 +191,6 @@ class ShopifyScraper:
         description = re.sub(r'\s+', ' ', description)[:1000] or None
 
         variants = raw.get("variants", [])
-        # If only one variant, treat the product as a single item
-        # If multiple variants (e.g. different widths/colors), emit one per variant
         for variant in variants:
             sku = variant.get("sku") or f"{handle}-{variant.get('id', '')}"
             price_str = variant.get("price", "0")
@@ -96,16 +204,13 @@ class ShopifyScraper:
             available = variant.get("available", True)
             variant_title = variant.get("title", "")
 
-            # Build full title: combine product title + variant if meaningful
             full_title = title
             if variant_title and variant_title.lower() not in ("default title", ""):
                 full_title = f"{title} — {variant_title}"
 
-            # Extract dimensions from title/variant
-            dims = self._extract_dimensions(full_title + " " + variant_title)
-
-            # Compute normalized price
-            norm_price, norm_unit = self._compute_normalized_price(price, dims, full_title)
+            # Extract dimensions from combined title + variant (variant often has the size)
+            dims = extract_dimensions(full_title + " " + variant_title)
+            norm_price, norm_unit = compute_normalized_price(price, dims, full_title)
 
             yield {
                 "supplier_name": self.supplier_name,
@@ -153,61 +258,9 @@ class ShopifyScraper:
             return "Banner"
         if any(k in t for k in ["substrate", "sign blank", "sign board"]):
             return "Substrate"
-        # Check supplier-specific map
         if product_type in self.CATEGORY_MAP:
             return self.CATEGORY_MAP[product_type]
         return product_type.title() if product_type else None
-
-    def _extract_dimensions(self, text: str) -> dict:
-        """Extract width x length (in inches/feet/yards) from product title."""
-        dims: dict = {}
-        text_lower = text.lower()
-
-        # Pattern: NNin x NNyd or NN" x NN' or NN x NN (inches assumed)
-        # Width x Length in yards: e.g. "54\" x 50yd", "60in x 50yd"
-        m = re.search(r'(\d+\.?\d*)\s*(?:"|in|inch)?\s*[xX×]\s*(\d+\.?\d*)\s*(yd|yard|ft|feet|in|")?', text)
-        if m:
-            w = float(m.group(1))
-            l_val = float(m.group(2))
-            l_unit = (m.group(3) or "").lower()
-            dims["width"] = w  # inches
-            if "yd" in l_unit or "yard" in l_unit:
-                dims["length"] = l_val * 36  # convert yards to inches
-            elif "ft" in l_unit or "feet" in l_unit:
-                dims["length"] = l_val * 12
-            else:
-                dims["length"] = l_val  # assume inches
-
-        # Thickness: e.g. ".040", "3mm", "1/8\""
-        m2 = re.search(r'(\d+\.?\d*)\s*mm', text_lower)
-        if m2:
-            dims["thickness"] = float(m2.group(1))
-        else:
-            m3 = re.search(r'\.(0\d{2})', text_lower)
-            if m3:
-                dims["thickness"] = float("0." + m3.group(1))
-
-        return dims
-
-    def _compute_normalized_price(self, price: float, dims: dict, title: str) -> tuple[float | None, str | None]:
-        """Calculate $/ft² or $/linear ft based on available dimensions."""
-        width_in = dims.get("width")
-        length_in = dims.get("length")
-
-        if width_in and length_in:
-            sq_inches = width_in * length_in
-            sq_ft = sq_inches / 144.0
-            if sq_ft > 0:
-                return round(price / sq_ft, 4), "ft²"
-
-        # Linear ft: if only width or only length
-        if width_in and not length_in:
-            lin_ft = width_in / 12.0
-            if lin_ft > 0:
-                return round(price / lin_ft, 4), "linear ft"
-
-        # Default: $/unit
-        return price, "unit"
 
     def _extract_color(self, text: str) -> str | None:
         colors = ["white", "black", "red", "blue", "green", "yellow", "silver", "gold",

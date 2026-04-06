@@ -4,6 +4,7 @@ import re
 from bs4 import BeautifulSoup
 from app.services.job_tracker import update_job, JobStatus
 from app.services.product_service import upsert_product
+from app.scrapers.shopify_base import extract_dimensions, compute_normalized_price
 from datetime import datetime
 
 
@@ -113,8 +114,8 @@ class USCutterScraper:
                 sku = sku_el.get_text(strip=True).replace("SKU:", "").strip() if sku_el else title[:50]
 
                 category = self._map_category(category_path, title)
-                dims = self._extract_dimensions(title)
-                norm_price, norm_unit = self._compute_normalized(price, dims)
+                dims = extract_dimensions(title)
+                norm_price, norm_unit = compute_normalized_price(price, dims, title)
 
                 products.append({
                     "supplier_name": self.supplier_name,
@@ -156,26 +157,3 @@ class USCutterScraper:
             return "Laminate"
         return "Vinyl"
 
-    def _extract_dimensions(self, text: str) -> dict:
-        dims: dict = {}
-        m = re.search(r'(\d+\.?\d*)\s*(?:"|in)?\s*[xX×]\s*(\d+\.?\d*)\s*(yd|yard|ft|feet|")?', text)
-        if m:
-            dims["width"] = float(m.group(1))
-            l_val = float(m.group(2))
-            l_unit = (m.group(3) or "").lower()
-            if "yd" in l_unit:
-                dims["length"] = l_val * 36
-            elif "ft" in l_unit:
-                dims["length"] = l_val * 12
-            else:
-                dims["length"] = l_val
-        return dims
-
-    def _compute_normalized(self, price: float, dims: dict) -> tuple[float | None, str | None]:
-        w = dims.get("width")
-        l = dims.get("length")
-        if w and l:
-            sq_ft = (w * l) / 144.0
-            if sq_ft > 0:
-                return round(price / sq_ft, 4), "ft²"
-        return price, "unit"
