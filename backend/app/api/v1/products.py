@@ -27,16 +27,17 @@ async def list_products(
     q = select(Product)
 
     if search:
-        term = f"%{search.lower()}%"
-        q = q.where(
-            or_(
-                func.lower(Product.title).like(term),
-                func.lower(Product.brand).like(term),
-                func.lower(Product.sku).like(term),
-                func.lower(Product.material_category).like(term),
-                func.lower(Product.supplier_name).like(term),
+        for word in search.lower().split():
+            term = f"%{word}%"
+            q = q.where(
+                or_(
+                    func.lower(Product.title).like(term),
+                    func.lower(Product.brand).like(term),
+                    func.lower(Product.sku).like(term),
+                    func.lower(Product.material_category).like(term),
+                    func.lower(Product.supplier_name).like(term),
+                )
             )
-        )
     if material_category:
         q = q.where(Product.material_category == material_category)
     if supplier:
@@ -90,15 +91,17 @@ async def compare_products(
     Groups are formed by matching on material_category + brand (if available).
     Within each group, products are sorted by normalized_price ascending.
     """
-    term = f"%{search.lower()}%"
-    q = select(Product).where(
-        or_(
-            func.lower(Product.title).like(term),
-            func.lower(Product.brand).like(term),
-            func.lower(Product.sku).like(term),
-            func.lower(Product.material_category).like(term),
+    q = select(Product)
+    for word in search.lower().split():
+        term = f"%{word}%"
+        q = q.where(
+            or_(
+                func.lower(Product.title).like(term),
+                func.lower(Product.brand).like(term),
+                func.lower(Product.sku).like(term),
+                func.lower(Product.material_category).like(term),
+            )
         )
-    )
     if material_category:
         q = q.where(Product.material_category == material_category)
 

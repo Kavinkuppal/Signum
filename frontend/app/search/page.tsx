@@ -15,6 +15,7 @@ export default function SearchPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [data, setData] = useState<ProductsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -31,8 +32,10 @@ export default function SearchPage() {
         const res = await fetch(`${apiUrl('/products')}?${params}`)
         const json = await res.json()
         setData(json)
+        setError(null)
       } catch (e) {
         console.error(e)
+        setError(e instanceof Error ? e.message : 'Unknown error')
       } finally {
         setIsLoading(false)
       }
@@ -93,6 +96,12 @@ export default function SearchPage() {
                       <div className="h-3 bg-white/[0.05] rounded w-2/3" />
                     </div>
                   ))}
+                </motion.div>
+              ) : error ? (
+                <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24">
+                  <p className="text-red-400 font-medium mb-1">Could not reach backend</p>
+                  <p className="text-sm text-slate-500">{error}</p>
+                  <p className="text-xs text-slate-600 mt-2">Backend may be waking up — wait 20 seconds and try again.</p>
                 </motion.div>
               ) : !data?.products?.length ? (
                 <motion.div
