@@ -5,6 +5,8 @@ from datetime import datetime
 
 
 async def upsert_product(data: dict, user_id: str | None = None) -> None:
+    # Strip user_id from data dict — it's passed as an explicit param to avoid duplicates
+    data = {k: v for k, v in data.items() if k != "user_id"}
     """
     Insert or update a product. user_id=None means public (tier1).
     user_id=email means private to that user.
