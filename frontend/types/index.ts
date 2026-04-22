@@ -44,3 +44,16 @@ export interface SupplierConnection {
   connected_at: string
   last_synced_at: string | null
 }
+
+export interface CustomSupplier {
+  id: string
+  url: string
+  domain: string
+  name: string
+  scrape_status: 'pending' | 'scraping' | 'scraped' | 'failed'
+  scrape_error: string | null
+  scrape_strategy: string | null
+  products_found: number
+  created_at: string
+  last_scraped_at: string | null
+}

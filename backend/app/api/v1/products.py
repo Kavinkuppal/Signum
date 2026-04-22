@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_, text, Float, case
 from sqlalchemy.orm import selectinload
@@ -22,9 +22,14 @@ async def list_products(
     page: int = Query(1, ge=1),
     page_size: int = Query(24, ge=1, le=100),
     sort_by: str = Query("relevance", pattern="^(relevance|price_asc|price_desc|normalized_price_asc|normalized_price_desc|updated)$"),
+    x_user_email: Optional[str] = Header(None),
     db: AsyncSession = Depends(get_db),
 ):
-    q = select(Product)
+    # Show public products + this user's private products (if authenticated)
+    q = select(Product).where(
+        or_(Product.user_id == None, Product.user_id == x_user_email)
+        if x_user_email else Product.user_id == None
+    )
 
     if search:
         for word in search.lower().split():

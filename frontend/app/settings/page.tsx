@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '@/components/layout/Navbar'
-import { apiUrl } from '@/lib/api'
+import { apiUrl, api } from '@/lib/api'
+import type { CustomSupplier } from '@/types'
 
 const TIER1_SUPPLIERS = [
   {
@@ -31,14 +32,32 @@ const TIER1_SUPPLIERS = [
   },
 ]
 
+const STATUS_COLOR: Record<string, string> = {
+  scraped: 'text-green-400',
+  scraping: 'text-blue-400',
+  pending: 'text-yellow-400',
+  failed: 'text-red-400',
+}
+
 export default function SettingsPage() {
-  const { status: authStatus } = useSession()
+  const { data: session, status: authStatus } = useSession()
   const router = useRouter()
+  const email = session?.user?.email ?? ''
+
   const [scrapeStatus, setScrapeStatus] = useState<Record<string, any>>({})
   const [scraping, setScraping] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [seeded, setSeeded] = useState(false)
   const [scrapeStarted, setScrapeStarted] = useState(false)
+
+  // Custom suppliers state
+  const [customSuppliers, setCustomSuppliers] = useState<CustomSupplier[]>([])
+  const [newUrl, setNewUrl] = useState('')
+  const [newName, setNewName] = useState('')
+  const [addingSupplier, setAddingSupplier] = useState(false)
+  const [addError, setAddError] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [rescrapingId, setRescrapingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (authStatus === 'unauthenticated') router.push('/login')
@@ -84,6 +103,58 @@ export default function SettingsPage() {
     finally { setSeeding(false) }
   }
 
+  const loadCustomSuppliers = useCallback(async () => {
+    if (!email) return
+    try {
+      const data = await api.getCustomSuppliers(email)
+      setCustomSuppliers(data)
+    } catch {}
+  }, [email])
+
+  useEffect(() => { loadCustomSuppliers() }, [loadCustomSuppliers])
+
+  // Poll while any supplier is scraping
+  useEffect(() => {
+    const active = customSuppliers.some(s => s.scrape_status === 'scraping' || s.scrape_status === 'pending')
+    if (!active) return
+    const t = setInterval(loadCustomSuppliers, 4000)
+    return () => clearInterval(t)
+  }, [customSuppliers, loadCustomSuppliers])
+
+  const handleAddSupplier = async () => {
+    if (!newUrl.trim()) return
+    setAddingSupplier(true)
+    setAddError('')
+    try {
+      await api.addCustomSupplier(email, newUrl.trim(), newName.trim() || undefined)
+      setNewUrl('')
+      setNewName('')
+      await loadCustomSuppliers()
+    } catch (e: any) {
+      setAddError(e?.response?.data?.detail ?? 'Failed to add supplier')
+    } finally {
+      setAddingSupplier(false)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    setDeletingId(id)
+    try {
+      await api.deleteCustomSupplier(email, id)
+      setCustomSuppliers(prev => prev.filter(s => s.id !== id))
+    } catch {}
+    finally { setDeletingId(null) }
+  }
+
+  const handleRescrape = async (id: string) => {
+    setRescrapingId(id)
+    try {
+      await api.rescrapeCustomSupplier(email, id)
+      await loadCustomSuppliers()
+    } catch {}
+    finally { setRescrapingId(null) }
+  }
+
   return (
     <div className="min-h-screen bg-[#060b18]">
       <Navbar />
@@ -92,6 +163,109 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold text-white mb-1">Settings</h1>
           <p className="text-slate-500 mb-8">Data sources and supplier catalog management.</p>
         </motion.div>
+
+        {/* ── My Suppliers ─────────────────────────────────────────────────── */}
+        <div className="mb-10">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-white">My Suppliers</h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Paste any supplier website — Signum scrapes it and adds those products only for your account.
+            </p>
+          </div>
+
+          {/* Add form */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 mb-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="https://suppliername.com"
+                  value={newUrl}
+                  onChange={e => setNewUrl(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddSupplier()}
+                  className="flex-1 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-blue-500/40 focus:ring-1 focus:ring-blue-500/20"
+                />
+                <input
+                  type="text"
+                  placeholder="Name (optional)"
+                  value={newName}
+                  onChange={e => setNewName(e.target.value)}
+                  className="w-40 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-blue-500/40"
+                />
+                <button
+                  onClick={handleAddSupplier}
+                  disabled={addingSupplier || !newUrl.trim()}
+                  className="shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors"
+                >
+                  {addingSupplier ? 'Adding…' : 'Add'}
+                </button>
+              </div>
+              {addError && <p className="text-xs text-red-400">{addError}</p>}
+              <p className="text-xs text-slate-600">
+                Works with Shopify stores, WooCommerce sites, and most public product pages. Login-required sites cannot be scraped.
+              </p>
+            </div>
+          </div>
+
+          {/* Supplier list */}
+          <AnimatePresence>
+            {customSuppliers.length > 0 && (
+              <motion.div className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {customSuppliers.map(s => (
+                  <motion.div
+                    key={s.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex items-center gap-4"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-white/[0.06] flex items-center justify-center text-sm font-bold text-slate-400 shrink-0">
+                      {s.name[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-white">{s.name}</span>
+                        <span className="text-xs text-slate-600">{s.domain}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        <span className={`text-xs font-medium ${STATUS_COLOR[s.scrape_status] ?? 'text-slate-500'}`}>
+                          {s.scrape_status === 'scraping' && '⏳ Scraping…'}
+                          {s.scrape_status === 'pending' && '⏳ Queued…'}
+                          {s.scrape_status === 'scraped' && `✓ ${s.products_found} products`}
+                          {s.scrape_status === 'failed' && '✗ Failed'}
+                        </span>
+                        {s.scrape_status === 'scraped' && (
+                          <span className="text-xs text-slate-600 capitalize">{s.scrape_strategy}</span>
+                        )}
+                        {s.scrape_status === 'failed' && s.scrape_error && (
+                          <span className="text-xs text-slate-600 truncate max-w-xs">{s.scrape_error}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {(s.scrape_status === 'scraped' || s.scrape_status === 'failed') && (
+                        <button
+                          onClick={() => handleRescrape(s.id)}
+                          disabled={rescrapingId === s.id}
+                          className="text-xs text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+                        >
+                          {rescrapingId === s.id ? 'Re-scraping…' : 'Re-scrape'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        disabled={deletingId === s.id}
+                        className="text-xs text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40"
+                      >
+                        {deletingId === s.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Tier 1 Suppliers */}
         <div className="mb-8">

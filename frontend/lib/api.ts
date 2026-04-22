@@ -60,6 +60,26 @@ export const api = {
     }
   },
 
+  async getCustomSuppliers(email: string) {
+    const { data } = await client.get('/custom-suppliers', { headers: { 'X-User-Email': email } })
+    return data
+  },
+
+  async addCustomSupplier(email: string, url: string, name?: string) {
+    const { data } = await client.post('/custom-suppliers', { url, name }, { headers: { 'X-User-Email': email } })
+    return data
+  },
+
+  async deleteCustomSupplier(email: string, id: string) {
+    const { data } = await client.delete(`/custom-suppliers/${id}`, { headers: { 'X-User-Email': email } })
+    return data
+  },
+
+  async rescrapeCustomSupplier(email: string, id: string) {
+    const { data } = await client.post(`/custom-suppliers/${id}/rescrape`, {}, { headers: { 'X-User-Email': email } })
+    return data
+  },
+
   async parseBOM(description: string) {
     const { data } = await client.post('/ai/parse-bom', { description })
     return data as {

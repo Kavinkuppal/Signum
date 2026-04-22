@@ -8,6 +8,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str | None] = mapped_column(String, index=True)  # NULL = public tier1; email = user-specific
     supplier_name: Mapped[str] = mapped_column(String, nullable=False)
     sku: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)

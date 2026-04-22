@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useSession } from 'next-auth/react'
 import Navbar from '@/components/layout/Navbar'
 import FilterSidebar from '@/components/filters/FilterSidebar'
 import ProductCard from '@/components/product/ProductCard'
@@ -10,6 +11,8 @@ import { apiUrl, api } from '@/lib/api'
 import type { Product, ProductFilters, ProductsResponse } from '@/types'
 
 export default function SearchPage() {
+  const { data: session } = useSession()
+  const email = session?.user?.email ?? ''
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ProductFilters>({})
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -36,7 +39,9 @@ export default function SearchPage() {
         if (filters.max_price != null) params.set('max_price', String(filters.max_price))
         if (filters.in_stock != null) params.set('in_stock', String(filters.in_stock))
         if (filters.brand) params.set('brand', filters.brand)
-        const res = await fetch(`${apiUrl('/products')}?${params}`)
+        const res = await fetch(`${apiUrl('/products')}?${params}`, {
+          headers: email ? { 'X-User-Email': email } : {},
+        })
         const json = await res.json()
         setData(json)
         setError(null)
