@@ -262,9 +262,10 @@ export default function SettingsPage() {
                       <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mb-2">
                         {isActive && (
                           <motion.div
-                            className="h-full w-1/3 bg-blue-500 rounded-full"
-                            animate={{ x: ['0%', '250%'] }}
-                            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                            className="h-full bg-blue-500 rounded-full"
+                            initial={{ width: '0%' }}
+                            animate={{ width: '80%' }}
+                            transition={{ duration: 25, ease: 'easeOut' }}
                           />
                         )}
                         {isSuccess && (
