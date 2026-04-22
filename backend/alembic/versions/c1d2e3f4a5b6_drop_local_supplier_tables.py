@@ -16,10 +16,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.drop_table('scraper_templates')
-    op.drop_index('ix_local_suppliers_user_id', table_name='local_suppliers')
-    op.drop_table('local_suppliers')
-    op.drop_table('user_profiles')
+    op.execute('DROP TABLE IF EXISTS scraper_templates')
+    op.execute('DROP INDEX IF EXISTS ix_local_suppliers_user_id')
+    op.execute('DROP TABLE IF EXISTS local_suppliers')
+    op.execute('DROP TABLE IF EXISTS user_profiles')
 
 
 def downgrade() -> None:

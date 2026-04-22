@@ -17,6 +17,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Tables may already exist if this migration ran before — skip safely
+    from sqlalchemy import inspect
+    bind = op.get_bind()
+    existing = inspect(bind).get_table_names()
+    if 'user_profiles' in existing:
+        return
+
     op.create_table(
         'user_profiles',
         sa.Column('id', sa.String(), nullable=False),
