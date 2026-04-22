@@ -401,45 +401,6 @@ export default function SettingsPage() {
           </motion.div>
         </div>
 
-        {/* How it works */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.35 }}
-          className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 flex gap-3 mb-4"
-        >
-          <svg className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-blue-300 mb-1">About Tier 1 suppliers</p>
-            <p className="text-sm text-blue-400/70">
-              Tier 1 suppliers have public product catalogs accessible via Shopify JSON APIs.
-              No login required — data is refreshed every night. Tier 2 suppliers (Grimco, Fellers, Glantz)
-              require authenticated sessions and are coming in a future release.
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Demo data */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.45 }}
-          className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 flex items-center justify-between gap-4"
-        >
-          <div>
-            <p className="text-sm font-semibold text-white mb-1">Demo Data</p>
-            <p className="text-sm text-slate-500">Load 43 sample products for demo/testing without running a scrape.</p>
-          </div>
-          <button
-            onClick={handleSeedData}
-            disabled={seeding}
-            className="shrink-0 bg-white/[0.07] hover:bg-white/[0.1] border border-white/10 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {seeding ? 'Loading...' : seeded ? '✓ Loaded' : 'Load Demo Data'}
-          </button>
-        </motion.div>
       </main>
     </div>
   )
