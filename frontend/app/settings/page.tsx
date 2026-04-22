@@ -211,57 +211,101 @@ export default function SettingsPage() {
           <AnimatePresence>
             {customSuppliers.length > 0 && (
               <motion.div className="space-y-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                {customSuppliers.map(s => (
-                  <motion.div
-                    key={s.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex items-center gap-4"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-white/[0.06] flex items-center justify-center text-sm font-bold text-slate-400 shrink-0">
-                      {s.name[0]?.toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-white">{s.name}</span>
-                        <span className="text-xs text-slate-600">{s.domain}</span>
+                {customSuppliers.map(s => {
+                  const isActive = s.scrape_status === 'scraping' || s.scrape_status === 'pending'
+                  const isSuccess = s.scrape_status === 'scraped'
+                  const isFailed = s.scrape_status === 'failed'
+                  return (
+                    <motion.div
+                      key={s.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 overflow-hidden"
+                    >
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.06] flex items-center justify-center text-sm font-bold text-slate-400 shrink-0">
+                          {s.name[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-white">{s.name}</span>
+                            <a href={s.url} target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
+                              {s.domain} ↗
+                            </a>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {(isSuccess || isFailed) && (
+                            <button
+                              onClick={() => handleRescrape(s.id)}
+                              disabled={rescrapingId === s.id}
+                              className="text-xs text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
+                            >
+                              {rescrapingId === s.id ? 'Re-scraping…' : 'Re-scrape'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(s.id)}
+                            disabled={deletingId === s.id}
+                            className="text-xs text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40"
+                          >
+                            {deletingId === s.id ? 'Deleting…' : 'Delete'}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5">
+
+                      {/* Progress bar */}
+                      <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden mb-2">
+                        {isActive && (
+                          <motion.div
+                            className="h-full w-1/3 bg-blue-500 rounded-full"
+                            animate={{ x: ['0%', '250%'] }}
+                            transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                        )}
+                        {isSuccess && (
+                          <motion.div
+                            className="h-full bg-green-500 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: '100%' }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                          />
+                        )}
+                        {isFailed && (
+                          <motion.div
+                            className="h-full bg-red-500/70 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: '100%' }}
+                            transition={{ duration: 0.4 }}
+                          />
+                        )}
+                      </div>
+
+                      {/* Status line */}
+                      <div className="flex items-center justify-between gap-2">
                         <span className={`text-xs font-medium ${STATUS_COLOR[s.scrape_status] ?? 'text-slate-500'}`}>
-                          {s.scrape_status === 'scraping' && '⏳ Scraping…'}
-                          {s.scrape_status === 'pending' && '⏳ Queued…'}
-                          {s.scrape_status === 'scraped' && `✓ ${s.products_found} products`}
-                          {s.scrape_status === 'failed' && '✗ Failed'}
+                          {s.scrape_status === 'pending' && 'Queued — starting soon…'}
+                          {s.scrape_status === 'scraping' && 'Scraping product catalog…'}
+                          {isSuccess && `Successfully scraped — ${s.products_found.toLocaleString()} products added to your search`}
+                          {isFailed && `Scrape failed — ${s.scrape_error ?? 'Site may require login or use an unsupported format'}`}
                         </span>
-                        {s.scrape_status === 'scraped' && (
-                          <span className="text-xs text-slate-600 capitalize">{s.scrape_strategy}</span>
-                        )}
-                        {s.scrape_status === 'failed' && s.scrape_error && (
-                          <span className="text-xs text-slate-600 truncate max-w-xs">{s.scrape_error}</span>
-                        )}
+                        <div className="flex items-center gap-3 shrink-0">
+                          {isSuccess && s.scrape_strategy && (
+                            <span className="text-xs text-slate-600 capitalize">via {s.scrape_strategy}</span>
+                          )}
+                          {s.last_scraped_at && (
+                            <span className="text-xs text-slate-700">
+                              {new Date(s.last_scraped_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {(s.scrape_status === 'scraped' || s.scrape_status === 'failed') && (
-                        <button
-                          onClick={() => handleRescrape(s.id)}
-                          disabled={rescrapingId === s.id}
-                          className="text-xs text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-40"
-                        >
-                          {rescrapingId === s.id ? 'Re-scraping…' : 'Re-scrape'}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(s.id)}
-                        disabled={deletingId === s.id}
-                        className="text-xs text-red-400/60 hover:text-red-400 transition-colors disabled:opacity-40"
-                      >
-                        {deletingId === s.id ? 'Deleting…' : 'Delete'}
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  )
+                })}
               </motion.div>
             )}
           </AnimatePresence>
