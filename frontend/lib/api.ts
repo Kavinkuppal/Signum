@@ -90,6 +90,13 @@ export const api = {
     return data
   },
 
+  async cancelDiscovery(email: string) {
+    const { data } = await client.post('/local-suppliers/cancel', {}, {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
+
   async rescrapeLocalSupplier(email: string, supplierId: string) {
     const { data } = await client.post(`/local-suppliers/${supplierId}/scrape`, {}, {
       headers: { 'X-User-Email': email },

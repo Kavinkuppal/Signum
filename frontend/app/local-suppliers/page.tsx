@@ -101,6 +101,13 @@ export default function LocalSuppliersPage() {
     }
   }
 
+  const handleCancel = async () => {
+    if (!email) return
+    try {
+      await api.cancelDiscovery(email)
+    } catch {}
+  }
+
   const handleRescrape = async (id: string) => {
     if (!email) return
     setRescrapingId(id)
@@ -242,15 +249,25 @@ export default function LocalSuppliersPage() {
                   )}
                   <span className="text-sm font-medium text-white">
                     {phase === 'querying_osm' && 'Querying OpenStreetMap for nearby businesses…'}
-                    {phase === 'scraping' && `Scraping supplier websites…`}
+                    {phase === 'scraping' && 'Scraping supplier websites…'}
                     {phase === 'done' && 'Discovery complete'}
                   </span>
                 </div>
-                {discoveryStatus && discoveryStatus.total > 0 && (
-                  <span className="text-xs text-slate-500">
-                    {discoveryStatus.done} / {discoveryStatus.total}
-                  </span>
-                )}
+                <div className="flex items-center gap-3">
+                  {discoveryStatus && discoveryStatus.total > 0 && (
+                    <span className="text-xs text-slate-500">
+                      {discoveryStatus.done} / {discoveryStatus.total}
+                    </span>
+                  )}
+                  {isActive && (
+                    <button
+                      onClick={handleCancel}
+                      className="text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400/50 px-2.5 py-1 rounded-lg transition-colors"
+                    >
+                      Stop
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Progress bar */}

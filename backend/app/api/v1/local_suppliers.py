@@ -6,7 +6,6 @@ from app.core.deps import get_current_user_id
 from app.models.local_supplier import LocalSupplier, UserProfile
 from app.schemas.local_supplier import UserProfileCreate, UserProfileOut, LocalSupplierOut
 from app.services.geocoding import geocode_location, find_nearby_suppliers, compute_rank_score
-from app.services.product_service import upsert_product
 from app.scrapers.smart_scraper import smart_scrape_supplier
 from datetime import datetime
 from typing import List, Optional
@@ -14,6 +13,9 @@ import uuid
 import asyncio
 
 router = APIRouter()
+
+# In-memory set of user_ids that have requested cancellation
+_cancel_requested: set[str] = set()
 
 
 # ── User profile (location + preferences) ─────────────────────────────────────
@@ -102,6 +104,7 @@ async def discover_local_suppliers(
             detail="Save your location in Settings → Location Profile first.",
         )
 
+    _cancel_requested.discard(user_id)  # clear any previous cancel
     background_tasks.add_task(
         _run_discovery,
         user_id=user_id,
@@ -113,6 +116,13 @@ async def discover_local_suppliers(
         use_ai=use_ai,
     )
     return {"message": "Discovery started. Reload this page in a moment."}
+
+
+@router.post("/cancel")
+async def cancel_discovery(user_id: str = Depends(get_current_user_id)):
+    """Signal the running discovery loop to stop after the current supplier."""
+    _cancel_requested.add(user_id)
+    return {"message": "Cancellation requested"}
 
 
 async def _run_discovery(
@@ -167,6 +177,19 @@ async def _run_discovery(
         rows = result.all()
 
     for sup_id, sup_name, sup_website in rows:
+        # Check for user-requested cancellation between each supplier
+        if user_id in _cancel_requested:
+            _cancel_requested.discard(user_id)
+            # Mark remaining pending suppliers as failed-cancelled
+            async with AsyncSessionLocal() as db:
+                await db.execute(
+                    update(LocalSupplier)
+                    .where(LocalSupplier.user_id == user_id, LocalSupplier.scrape_status == "pending")
+                    .values(scrape_status="failed", scrape_error="Cancelled by user")
+                )
+                await db.commit()
+            break
+
         async with AsyncSessionLocal() as db:
             await db.execute(
                 update(LocalSupplier)
@@ -176,6 +199,8 @@ async def _run_discovery(
             await db.commit()
 
             try:
+                # Scrape to detect product count — but do NOT write to main products table.
+                # Local supplier discovery is for finding suppliers, not populating search.
                 products, strategy = await smart_scrape_supplier(
                     website_url=sup_website,
                     supplier_name=sup_name,
@@ -183,8 +208,6 @@ async def _run_discovery(
                     use_ai=use_ai,
                 )
                 if products:
-                    for p in products:
-                        await upsert_product(p)
                     await db.execute(
                         update(LocalSupplier)
                         .where(LocalSupplier.id == sup_id)
