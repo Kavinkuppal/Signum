@@ -216,6 +216,49 @@ async def _run_discovery(
         await asyncio.sleep(2.0)  # be courteous between scrapes
 
 
+# ── Discovery status (for progress UI) ───────────────────────────────────────
+
+@router.get("/status")
+async def discovery_status(
+    db: AsyncSession = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """Returns live counts for the progress bar on the frontend."""
+    from sqlalchemy import func, case
+
+    result = await db.execute(
+        select(
+            func.count().label("total"),
+            func.sum(case((LocalSupplier.scrape_status == "scraped", 1), else_=0)).label("scraped"),
+            func.sum(case((LocalSupplier.scrape_status == "scraping", 1), else_=0)).label("scraping"),
+            func.sum(case((LocalSupplier.scrape_status == "pending", 1), else_=0)).label("pending"),
+            func.sum(case((LocalSupplier.scrape_status == "failed", 1), else_=0)).label("failed"),
+            func.sum(case((LocalSupplier.scrape_status == "no_website", 1), else_=0)).label("no_website"),
+        ).where(LocalSupplier.user_id == user_id)
+    )
+    row = result.one()
+    total = row.total or 0
+    scraped = int(row.scraped or 0)
+    scraping = int(row.scraping or 0)
+    pending = int(row.pending or 0)
+    failed = int(row.failed or 0)
+    no_website = int(row.no_website or 0)
+    done = scraped + failed + no_website
+    is_running = scraping > 0 or pending > 0
+
+    return {
+        "total": total,
+        "scraped": scraped,
+        "scraping": scraping,
+        "pending": pending,
+        "failed": failed,
+        "no_website": no_website,
+        "done": done,
+        "is_running": is_running,
+        "percent": round((done / total) * 100) if total > 0 else 0,
+    }
+
+
 # ── Listing ───────────────────────────────────────────────────────────────────
 
 @router.get("", response_model=List[LocalSupplierOut])

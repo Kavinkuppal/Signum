@@ -47,6 +47,13 @@ export const api = {
     return data
   },
 
+  async getDiscoveryStatus(email: string) {
+    const { data } = await client.get('/local-suppliers/status', {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
+
   async getLocalSuppliers(email: string) {
     const { data } = await client.get('/local-suppliers', {
       headers: { 'X-User-Email': email },
