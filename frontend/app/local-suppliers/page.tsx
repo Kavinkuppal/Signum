@@ -34,6 +34,10 @@ export default function LocalSuppliersPage() {
   const [isDiscovering, setIsDiscovering] = useState(false)
   const [rescrapingId, setRescrapingId] = useState<string | null>(null)
   const [phase, setPhase] = useState<'idle' | 'querying_osm' | 'scraping' | 'done'>('idle')
+  const [useAi, setUseAi] = useState(() => {
+    if (typeof window !== 'undefined') return localStorage.getItem('signum_use_ai') === 'true'
+    return false
+  })
 
   const email = session?.user?.email ?? ''
 
@@ -86,7 +90,7 @@ export default function LocalSuppliersPage() {
     setSuppliers([])
     setDiscoveryStatus(null)
     try {
-      await api.discoverLocalSuppliers(email)
+      await api.discoverLocalSuppliers(email, useAi)
       // Start polling — first results appear after OSM query (~5s)
       setTimeout(loadAll, 5000)
     } catch (e: any) {
@@ -154,12 +158,35 @@ export default function LocalSuppliersPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
             {!profile?.lat && (
               <button onClick={() => router.push('/settings')} className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
                 Set location →
               </button>
             )}
+
+            {/* AI scraping toggle */}
+            {profile?.lat && (
+              <button
+                onClick={() => {
+                  const next = !useAi
+                  setUseAi(next)
+                  localStorage.setItem('signum_use_ai', String(next))
+                }}
+                className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                  useAi
+                    ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
+                    : 'bg-white/[0.04] border-white/10 text-slate-500 hover:text-slate-300'
+                }`}
+                title="AI extraction uses Claude Haiku API credits. Only enable if Shopify/WooCommerce/JSON-LD strategies fail."
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                AI scraping {useAi ? 'ON' : 'OFF'}
+              </button>
+            )}
+
             {profile?.lat && (
               <motion.button
                 whileHover={{ scale: 1.02 }}

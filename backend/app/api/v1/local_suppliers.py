@@ -84,6 +84,7 @@ async def discover_local_suppliers(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
+    use_ai: bool = False,
 ):
     """
     Kick off OSM-based business discovery + smart scraping for the user's
@@ -109,6 +110,7 @@ async def discover_local_suppliers(
         radius_km=profile.search_radius_km,
         priority=profile.priority,
         material_interests=profile.material_interests or [],
+        use_ai=use_ai,
     )
     return {"message": "Discovery started. Reload this page in a moment."}
 
@@ -120,6 +122,7 @@ async def _run_discovery(
     radius_km: float,
     priority: str,
     material_interests: list[str],
+    use_ai: bool = False,
 ) -> None:
     """Background: query Overpass → create rows → smart-scrape each website."""
     businesses = await find_nearby_suppliers(lat, lng, radius_km)
@@ -177,6 +180,7 @@ async def _run_discovery(
                     website_url=sup_website,
                     supplier_name=sup_name,
                     db=db,
+                    use_ai=use_ai,
                 )
                 if products:
                     for p in products:

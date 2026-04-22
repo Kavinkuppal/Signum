@@ -81,10 +81,12 @@ export const api = {
     return data
   },
 
-  async discoverLocalSuppliers(email: string) {
-    const { data } = await client.post('/local-suppliers/discover', {}, {
-      headers: { 'X-User-Email': email },
-    })
+  async discoverLocalSuppliers(email: string, useAi: boolean = false) {
+    const { data } = await client.post(
+      `/local-suppliers/discover?use_ai=${useAi}`,
+      {},
+      { headers: { 'X-User-Email': email } },
+    )
     return data
   },
 

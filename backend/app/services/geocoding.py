@@ -30,16 +30,40 @@ NOMINATIM_MIN_INTERVAL = 1.1
 OVERPASS_MIN_INTERVAL = 2.0
 
 # ── OSM tags that indicate signage-relevant suppliers ─────────────────────────
-_SHOP_TAGS = ["trade", "signs", "hardware", "paint", "plastics", "electrical", "metal"]
+# Removed "paint" (matches paint-and-sip bars), "plastics" (matches plastic surgeons),
+# "electrical" (matches electricians not supply houses), "hardware" (too broad)
+_SHOP_TAGS = ["trade", "signs", "metal"]
 _CRAFT_TAGS = ["signmaker", "metal_construction"]
 _INDUSTRIAL_TAGS = ["distributor"]
 
-# Keywords matched against business name (case-insensitive)
+# Very specific name keywords — broad terms like "plastic", "led", "paint", "display"
+# caused false positives (plastic surgeons, paint-and-sip bars, flag stores).
 _NAME_KEYWORDS = [
-    "sign", "vinyl", "acrylic", "plastic", "aluminum", "aluminium",
-    "led", "graphic", "wrap", "banner", "print", "substrate",
-    "laminate", "display", "lettering", "neon", "fabricat",
+    "vinyl", "acrylic", "aluminum", "aluminium",
+    "signage", "sign supply", "wrap supply", "graphics supply",
+    "wide.?format", "substrate", "laminate", "neon sign", "led sign",
+    "banner supply", "vehicle wrap",
 ]
+
+# Businesses whose names contain any of these strings are excluded outright.
+_EXCLUSION_KEYWORDS = [
+    "surgeon", "surgery", "surgical", "medical", "dental", "dentist",
+    "clinic", "hospital", "health", "pharmacy", "physician", "orthodont",
+    "restaurant", "cafe", "coffee", "brewery", "winery", " bar",
+    "pizza", "burger", "grill", "diner", "bakery", "eat. ", "drink.",
+    "salon", "spa", "beauty", "nail ", "hair ", "barbershop",
+    "school", "university", "college", "church", "mosque", "temple",
+    "attorney", "lawyer", "law ", "insurance", "mortgage", "real estate",
+    "paint and sip", "paint & sip", "sip and paint", "paint night",
+    "plastic surg",
+]
+
+# OSM amenity tags that are never signage suppliers
+_EXCLUSION_AMENITIES = {
+    "restaurant", "cafe", "bar", "pub", "fast_food", "hospital",
+    "doctors", "pharmacy", "dentist", "school", "university",
+    "place_of_worship", "bank", "fuel",
+}
 
 
 async def geocode_location(location: str) -> Optional[tuple[float, float]]:
@@ -118,6 +142,22 @@ async def find_nearby_suppliers(
 out body center;
 """.strip()
 
+    def _is_relevant(name: str, tags: dict) -> bool:
+        """Filter out businesses that clearly aren't signage suppliers."""
+        name_lower = name.lower()
+        # Exclude by name keywords
+        if any(excl in name_lower for excl in _EXCLUSION_KEYWORDS):
+            return False
+        # Exclude by OSM amenity tag
+        if tags.get("amenity") in _EXCLUSION_AMENITIES:
+            return False
+        # shop=paint only keeps dedicated paint/coatings suppliers, not art studios
+        if tags.get("shop") == "paint":
+            art_words = ["studio", "sip", "art ", "craft", "party", "class"]
+            if any(w in name_lower for w in art_words):
+                return False
+        return True
+
     headers = {"User-Agent": APP_USER_AGENT}
 
     try:
@@ -148,6 +188,10 @@ out body center;
         if name_key in seen:
             continue
         seen.add(name_key)
+
+        # Skip irrelevant businesses
+        if not _is_relevant(name, tags):
+            continue
 
         # Coordinates — nodes have lat/lon directly; ways/relations provide center
         if el["type"] == "node":

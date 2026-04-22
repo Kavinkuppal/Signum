@@ -436,6 +436,7 @@ async def smart_scrape_supplier(
     website_url: str,
     supplier_name: str,
     db=None,  # AsyncSession — used for template read/write
+    use_ai: bool = True,
 ) -> tuple[list[dict], str]:
     """
     Run the full fallback chain against website_url.
@@ -491,7 +492,9 @@ async def smart_scrape_supplier(
                     await db.commit()
                     return products, "css_template"
 
-        # 5. AI extraction
+        # 5. AI extraction (only if caller opted in)
+        if not use_ai:
+            return [], "failed"
         products, css_template = await _try_ai_extraction(html, supplier_name, website_url)
         if products:
             if css_template and db is not None:
