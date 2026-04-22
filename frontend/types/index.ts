@@ -44,3 +44,38 @@ export interface SupplierConnection {
   connected_at: string
   last_synced_at: string | null
 }
+
+export interface UserProfile {
+  id: string
+  user_id: string
+  zip_code: string | null
+  city: string | null
+  lat: number | null
+  lng: number | null
+  search_radius_km: number
+  priority: 'price' | 'speed' | 'local'
+  material_interests: string[] | null
+  created_at: string
+  updated_at: string
+}
+
+export interface LocalSupplier {
+  id: string
+  name: string
+  address: string | null
+  phone: string | null
+  website: string | null
+  lat: number | null
+  lng: number | null
+  distance_km: number | null
+  material_categories: string[] | null
+  scrape_status: 'pending' | 'scraping' | 'scraped' | 'failed' | 'no_website' | 'login_required'
+  scrape_error: string | null
+  products_found: number
+  last_scraped_at: string | null
+  rank_score: number | null
+  discovered_at: string
+  osm_id: string | null
+  osm_type: string | null
+  osm_tags: Record<string, string> | null
+}

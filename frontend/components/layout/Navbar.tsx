@@ -21,6 +21,7 @@ export default function Navbar() {
     { href: '/dashboard', label: 'Projects' },
     { href: '/compare', label: 'Compare' },
     { href: '/search', label: 'Search' },
+    { href: '/local-suppliers', label: 'Local' },
     { href: '/inventory', label: 'Ledger' },
     { href: '/settings', label: 'Settings' },
   ]

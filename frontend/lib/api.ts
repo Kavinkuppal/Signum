@@ -46,4 +46,45 @@ export const api = {
     const { data } = await client.get('/products/compare', { params })
     return data
   },
+
+  async getLocalSuppliers(email: string) {
+    const { data } = await client.get('/local-suppliers', {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
+
+  async getLocationProfile(email: string) {
+    const { data } = await client.get('/local-suppliers/profile', {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
+
+  async saveLocationProfile(email: string, payload: {
+    zip_code?: string
+    city?: string
+    search_radius_km: number
+    priority: string
+    material_interests: string[]
+  }) {
+    const { data } = await client.post('/local-suppliers/profile', payload, {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
+
+  async discoverLocalSuppliers(email: string) {
+    const { data } = await client.post('/local-suppliers/discover', {}, {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
+
+  async rescrapeLocalSupplier(email: string, supplierId: string) {
+    const { data } = await client.post(`/local-suppliers/${supplierId}/scrape`, {}, {
+      headers: { 'X-User-Email': email },
+    })
+    return data
+  },
 }

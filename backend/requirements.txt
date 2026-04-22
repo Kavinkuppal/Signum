@@ -15,3 +15,4 @@ python-multipart==0.0.9
 cryptography==42.0.8
 apscheduler==3.10.4
 beautifulsoup4==4.12.3
+anthropic>=0.28.0
