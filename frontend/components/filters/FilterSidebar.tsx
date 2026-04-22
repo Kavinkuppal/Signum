@@ -7,12 +7,19 @@ const MATERIAL_CATEGORIES = [
   'Vinyl', 'Aluminum', 'LED', 'Substrate', 'Hardware', 'Ink', 'Laminate', 'Foam Board', 'Coroplast', 'Acrylic'
 ]
 
+const TIER1_SUPPLIERS = [
+  { label: 'Blue Ridge', value: 'Blue Ridge Sign Supply' },
+  { label: 'McLogan', value: 'McLogan' },
+  { label: 'USCutter', value: 'USCutter' },
+]
+
 interface FilterSidebarProps {
   filters: ProductFilters
   onChange: (filters: ProductFilters) => void
+  customSuppliers?: { name: string }[]
 }
 
-export default function FilterSidebar({ filters, onChange }: FilterSidebarProps) {
+export default function FilterSidebar({ filters, onChange, customSuppliers = [] }: FilterSidebarProps) {
   const update = (key: keyof ProductFilters, value: ProductFilters[keyof ProductFilters]) => {
     onChange({ ...filters, [key]: value || undefined })
   }
@@ -62,9 +69,16 @@ export default function FilterSidebar({ filters, onChange }: FilterSidebarProps)
               className={selectClass}
             >
               <option value="">All suppliers</option>
-              <option value="blue_ridge">Blue Ridge</option>
-              <option value="mclogan">McLogan</option>
-              <option value="uscutter">USCutter</option>
+              {TIER1_SUPPLIERS.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+              {customSuppliers.length > 0 && (
+                <optgroup label="My Suppliers">
+                  {customSuppliers.map(s => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
           </div>
 

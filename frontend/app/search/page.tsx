@@ -8,7 +8,7 @@ import FilterSidebar from '@/components/filters/FilterSidebar'
 import ProductCard from '@/components/product/ProductCard'
 import ProductDetailModal from '@/components/product/ProductDetailModal'
 import { apiUrl, api } from '@/lib/api'
-import type { Product, ProductFilters, ProductsResponse } from '@/types'
+import type { Product, ProductFilters, ProductsResponse, CustomSupplier } from '@/types'
 
 export default function SearchPage() {
   const { data: session } = useSession()
@@ -19,6 +19,12 @@ export default function SearchPage() {
   const [data, setData] = useState<ProductsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [customSuppliers, setCustomSuppliers] = useState<CustomSupplier[]>([])
+
+  useEffect(() => {
+    if (!email) return
+    api.getCustomSuppliers(email).then(setCustomSuppliers).catch(() => {})
+  }, [email])
 
   // AI search state
   const [aiMode, setAiMode] = useState(false)
@@ -184,7 +190,7 @@ export default function SearchPage() {
         </motion.div>
 
         <div className="flex gap-6">
-          <FilterSidebar filters={filters} onChange={setFilters} />
+          <FilterSidebar filters={filters} onChange={setFilters} customSuppliers={customSuppliers} />
 
           <div className="flex-1">
             {/* Results header */}

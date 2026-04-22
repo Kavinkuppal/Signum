@@ -117,15 +117,32 @@ async def delete_custom_supplier(
             raise HTTPException(status_code=404, detail="Supplier not found")
         supplier_name = supplier_row[0]
 
-        # Delete supplier row
+        # Cascade: delete child rows before products to avoid FK violations
         await conn.execute(
-            text("DELETE FROM custom_suppliers WHERE id = :id"),
-            {"id": supplier_id},
+            text("""
+                DELETE FROM volume_pricing
+                WHERE product_id IN (
+                    SELECT id FROM products WHERE user_id = :uid AND supplier_name = :name
+                )
+            """),
+            {"uid": user_id, "name": supplier_name},
         )
-        # Delete all products for this user+supplier
+        await conn.execute(
+            text("""
+                DELETE FROM price_history
+                WHERE product_id IN (
+                    SELECT id FROM products WHERE user_id = :uid AND supplier_name = :name
+                )
+            """),
+            {"uid": user_id, "name": supplier_name},
+        )
         r2 = await conn.execute(
             text("DELETE FROM products WHERE user_id = :uid AND supplier_name = :name"),
             {"uid": user_id, "name": supplier_name},
+        )
+        await conn.execute(
+            text("DELETE FROM custom_suppliers WHERE id = :id"),
+            {"id": supplier_id},
         )
     # engine.begin() auto-commits here
 
