@@ -154,7 +154,7 @@ async def _run_scrape(supplier_id: str, user_id: str, url: str, name: str) -> No
         await db.execute(
             update(CustomSupplier)
             .where(CustomSupplier.id == supplier_id)
-            .values(scrape_status="scraping", scrape_error=None)
+            .values(scrape_status="scraping", scrape_error=None, last_scraped_at=datetime.utcnow())
         )
         await db.commit()
 

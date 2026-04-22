@@ -140,11 +140,16 @@ export default function SettingsPage() {
 
   const handleDelete = async (id: string) => {
     setDeletingId(id)
+    // Optimistically remove immediately
+    setCustomSuppliers(prev => prev.filter(s => s.id !== id))
     try {
       await api.deleteCustomSupplier(email, id)
-      setCustomSuppliers(prev => prev.filter(s => s.id !== id))
-    } catch {}
-    finally { setDeletingId(null) }
+    } catch {
+      // Restore if it failed
+      await loadCustomSuppliers()
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const handleRescrape = async (id: string) => {
@@ -216,6 +221,16 @@ export default function SettingsPage() {
                   const isActive = s.scrape_status === 'scraping' || s.scrape_status === 'pending'
                   const isSuccess = s.scrape_status === 'scraped'
                   const isFailed = s.scrape_status === 'failed'
+
+                  // Compute how far the bar should already be based on elapsed scrape time
+                  const SCRAPE_DURATION = 25 // seconds estimate
+                  const elapsedSec = s.last_scraped_at && isActive
+                    ? (Date.now() - new Date(s.last_scraped_at).getTime()) / 1000
+                    : 0
+                  const startPct = Math.min(elapsedSec / SCRAPE_DURATION * 80, 75)
+                  const remainPct = 80 - startPct
+                  const remainDuration = Math.max(1, SCRAPE_DURATION - elapsedSec)
+
                   return (
                     <motion.div
                       key={s.id}
@@ -263,9 +278,9 @@ export default function SettingsPage() {
                         {isActive && (
                           <motion.div
                             className="h-full bg-blue-500 rounded-full"
-                            initial={{ width: '0%' }}
+                            initial={{ width: `${startPct}%` }}
                             animate={{ width: '80%' }}
-                            transition={{ duration: 25, ease: 'easeOut' }}
+                            transition={{ duration: remainDuration, ease: 'easeOut' }}
                           />
                         )}
                         {isSuccess && (
