@@ -104,36 +104,33 @@ class ParseBOMResponse(BaseModel):
 async def parse_bom(body: ParseBOMRequest):
     """
     Convert a job description into a list of signage materials with quantities.
-    E.g. "outdoor banner for a pizza shop, 4x8 feet" →
-         [{material_name: "Vinyl banner media", quantity: 1, unit: "sheets"}, ...]
+    Material names must be generic enough to match real products in the database.
     """
     prompt = f"""You are a signage material procurement assistant for a sign shop.
-Given a job description, list the signage materials needed to complete the job.
+Given a job description, list the materials needed using SHORT, GENERIC search terms
+that will match product listings in a supplier database.
 
-Only include materials relevant to sign making:
-- Vinyl films and wraps
-- Aluminum blanks or composite panels
-- Substrates (Sintra, foam board, Coroplast)
-- Laminates / overlaminates
-- LED modules or strips
-- Hardware (standoffs, channel caps, brackets)
-- Inks
-- Banner media / mesh
-
-Valid units: {", ".join(UNITS)}
+Rules:
+- Use SIMPLE category-level terms, not specific product names
+- Good examples: "vinyl", "aluminum panel", "coroplast", "foam board", "led module",
+  "laminate", "standoff", "acrylic sheet", "banner media", "vinyl wrap"
+- Bad examples: "Aluminum Blanks for Channel Letters", "High-Performance Cast Vinyl Film",
+  "Hardware - Standoffs and Brackets" — these are too specific and won't match
+- Only list materials actually needed for the job
+- Valid units: {", ".join(UNITS)}
 
 Job description: "{body.description}"
 
-Return ONLY valid JSON — no explanation:
+Return ONLY valid JSON:
 {{
   "materials": [
-    {{"material_name": "...", "quantity": 1.0, "unit": "..."}},
-    ...
+    {{"material_name": "vinyl", "quantity": 1.0, "unit": "rolls"}},
+    {{"material_name": "aluminum panel", "quantity": 2.0, "unit": "sheets"}}
   ],
-  "summary": "one sentence describing what you understood about this job"
+  "summary": "one sentence describing the job"
 }}
 
-If the description has nothing to do with signage, return {{"materials": [], "summary": "Could not identify signage materials from this description."}}"""
+If not signage-related, return {{"materials": [], "summary": "Could not identify signage materials."}}"""
 
     client = _client()
     msg = await client.messages.create(
