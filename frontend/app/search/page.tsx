@@ -6,7 +6,7 @@ import Navbar from '@/components/layout/Navbar'
 import FilterSidebar from '@/components/filters/FilterSidebar'
 import ProductCard from '@/components/product/ProductCard'
 import ProductDetailModal from '@/components/product/ProductDetailModal'
-import { apiUrl } from '@/lib/api'
+import { apiUrl, api } from '@/lib/api'
 import type { Product, ProductFilters, ProductsResponse } from '@/types'
 
 export default function SearchPage() {
@@ -16,6 +16,13 @@ export default function SearchPage() {
   const [data, setData] = useState<ProductsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // AI search state
+  const [aiMode, setAiMode] = useState(false)
+  const [aiQuery, setAiQuery] = useState('')
+  const [aiInterpreting, setAiInterpreting] = useState(false)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -43,6 +50,27 @@ export default function SearchPage() {
     return () => clearTimeout(timer)
   }, [search, filters])
 
+  const handleAiSearch = async () => {
+    if (!aiQuery.trim()) return
+    setAiInterpreting(true)
+    setAiSummary(null)
+    setAiError(null)
+    try {
+      const result = await api.interpretSearch(aiQuery)
+      setSearch(result.search ?? '')
+      setFilters({
+        material_category: result.material_category ?? undefined,
+        brand: result.brand ?? undefined,
+        in_stock: result.in_stock ?? undefined,
+      })
+      setAiSummary(result.interpreted)
+    } catch {
+      setAiError('AI search failed. Try a regular keyword search instead.')
+    } finally {
+      setAiInterpreting(false)
+    }
+  }
+
   return (
     <>
     <div className="min-h-screen bg-[#060b18]">
@@ -64,9 +92,65 @@ export default function SearchPage() {
               placeholder="Search products — e.g. '3M vinyl', 'aluminum panel', 'LED module'..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 rounded-2xl border border-white/10 bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 text-white placeholder-slate-500 transition-all text-base"
+              className="w-full pl-12 pr-36 py-4 rounded-2xl border border-white/10 bg-white/[0.04] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/40 text-white placeholder-slate-500 transition-all text-base"
             />
+            <button
+              onClick={() => { setAiMode(m => !m); setAiSummary(null); setAiError(null) }}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-colors ${
+                aiMode
+                  ? 'bg-purple-600/20 border-purple-500/40 text-purple-300'
+                  : 'bg-white/[0.06] border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+              }`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              AI Search
+            </button>
           </div>
+
+          {/* AI natural language panel */}
+          <AnimatePresence>
+            {aiMode && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mt-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl p-4"
+              >
+                <p className="text-xs text-purple-300 font-medium mb-2">Describe what you need in plain English</p>
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={aiQuery}
+                    onChange={e => setAiQuery(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAiSearch()}
+                    placeholder="e.g. matte black wrap for a pickup truck, or white cast vinyl for outdoor signs"
+                    className="flex-1 bg-white/[0.04] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-purple-500/40 focus:ring-1 focus:ring-purple-500/20"
+                  />
+                  <button
+                    onClick={handleAiSearch}
+                    disabled={aiInterpreting || !aiQuery.trim()}
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors shrink-0"
+                  >
+                    {aiInterpreting ? (
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                    ) : 'Search'}
+                  </button>
+                </div>
+                {aiSummary && (
+                  <p className="text-xs text-purple-300/70 mt-2">Understood: {aiSummary}</p>
+                )}
+                {aiError && (
+                  <p className="text-xs text-red-400 mt-2">{aiError}</p>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         <div className="flex gap-6">

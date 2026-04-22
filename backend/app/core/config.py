@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me-in-production"
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "https://signum-sage.vercel.app"]
     ENCRYPTION_KEY: str = "change-me-32-byte-key-here!!!!!"
+    ANTHROPIC_API_KEY: str = ""
 
     class Config:
         env_file = ".env"

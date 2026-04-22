@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AutocompleteInput from './AutocompleteInput'
-import { apiUrl, authHeaders } from '@/lib/api'
+import { apiUrl, authHeaders, api } from '@/lib/api'
 
 interface MaterialRow {
   id: string
@@ -31,6 +31,9 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
   ])
   const [bom, setBom] = useState<any>(null)
   const [error, setError] = useState('')
+  const [jobDescription, setJobDescription] = useState('')
+  const [aiParsing, setAiParsing] = useState(false)
+  const [aiSummary, setAiSummary] = useState('')
 
   const addRow = () => {
     setMaterials(prev => [...prev, { id: Date.now().toString(), material_name: '', quantity: '1', unit: 'units' }])
@@ -152,10 +155,28 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
                     value={description}
                     onChange={e => setDescription(e.target.value)}
                     placeholder="Brief notes about this project..."
-                    rows={3}
+                    rows={2}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 text-sm resize-none"
                   />
                 </div>
+
+                {/* AI job description */}
+                <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <label className="text-xs font-medium text-purple-300">Describe your job <span className="text-purple-400/50">(AI will suggest materials)</span></label>
+                  </div>
+                  <textarea
+                    value={jobDescription}
+                    onChange={e => setJobDescription(e.target.value)}
+                    placeholder="e.g. Outdoor monument sign for a dental office — aluminum panel with vinyl lettering and standoff mounting"
+                    rows={2}
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 text-white placeholder-gray-600 focus:outline-none focus:border-purple-500/40 text-sm resize-none"
+                  />
+                </div>
+
                 {error && <p className="text-sm text-red-400">{error}</p>}
               </motion.div>
             )}
@@ -163,6 +184,14 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
             {/* Step 2: Materials */}
             {step === 'materials' && (
               <motion.div key="materials" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}>
+                {aiSummary && (
+                  <div className="mb-3 flex items-start gap-2 bg-purple-500/10 border border-purple-500/20 rounded-xl px-3 py-2">
+                    <svg className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <p className="text-xs text-purple-300">{aiSummary} — edit below if needed.</p>
+                  </div>
+                )}
                 <div className="grid grid-cols-[1fr_80px_100px_32px] gap-2 mb-2">
                   <span className="text-xs text-gray-500 font-medium">Material</span>
                   <span className="text-xs text-gray-500 font-medium">Qty</span>
@@ -290,10 +319,33 @@ export default function NewProjectModal({ onClose, onCreated }: Props) {
             {step === 'name' && (
               <motion.button
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                onClick={() => { if (!projectName.trim()) return setError('Project name is required'); setError(''); setStep('materials') }}
-                className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors"
+                disabled={aiParsing}
+                onClick={async () => {
+                  if (!projectName.trim()) return setError('Project name is required')
+                  setError('')
+                  if (jobDescription.trim()) {
+                    setAiParsing(true)
+                    try {
+                      const result = await api.parseBOM(jobDescription)
+                      if (result.materials.length > 0) {
+                        setMaterials(result.materials.map((m, i) => ({
+                          id: String(Date.now() + i),
+                          material_name: m.material_name,
+                          quantity: String(m.quantity),
+                          unit: m.unit,
+                        })))
+                        setAiSummary(result.summary)
+                      }
+                    } catch {}
+                    finally { setAiParsing(false) }
+                  }
+                  setStep('materials')
+                }}
+                className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-colors flex items-center gap-2"
               >
-                Next →
+                {aiParsing ? (
+                  <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Analysing…</>
+                ) : 'Next →'}
               </motion.button>
             )}
             {step === 'materials' && (

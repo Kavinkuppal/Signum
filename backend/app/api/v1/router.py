@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import products, suppliers, auth, seed, scrape, projects
+from app.api.v1 import products, suppliers, auth, seed, scrape, projects, ai
 
 router = APIRouter()
 router.include_router(products.router, prefix="/products", tags=["products"])
@@ -8,3 +8,4 @@ router.include_router(auth.router, prefix="/auth", tags=["auth"])
 router.include_router(seed.router, prefix="/demo", tags=["demo"])
 router.include_router(scrape.router, prefix="/scrape", tags=["scrape"])
 router.include_router(projects.router, prefix="/projects", tags=["projects"])
+router.include_router(ai.router, prefix="/ai", tags=["ai"])

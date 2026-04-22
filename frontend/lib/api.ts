@@ -46,4 +46,25 @@ export const api = {
     const { data } = await client.get('/products/compare', { params })
     return data
   },
+
+  async interpretSearch(query: string) {
+    const { data } = await client.post('/ai/interpret-search', { query })
+    return data as {
+      search: string | null
+      material_category: string | null
+      brand: string | null
+      color: string | null
+      finish: string | null
+      in_stock: boolean | null
+      interpreted: string
+    }
+  },
+
+  async parseBOM(description: string) {
+    const { data } = await client.post('/ai/parse-bom', { description })
+    return data as {
+      materials: { material_name: string; quantity: number; unit: string }[]
+      summary: string
+    }
+  },
 }
