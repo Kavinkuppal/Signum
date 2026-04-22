@@ -872,3 +872,15 @@ async def clear_products(db: AsyncSession = Depends(get_db)):
     await db.execute(delete(Product))
     await db.commit()
     return {"message": "All products cleared"}
+
+
+@router.delete("/purge-non-tier1")
+async def purge_non_tier1(db: AsyncSession = Depends(get_db)):
+    """Delete every product not from Blue Ridge, McLogan, or USCutter."""
+    from sqlalchemy import not_
+    TIER1 = ("blue_ridge", "mclogan", "uscutter")
+    result = await db.execute(
+        delete(Product).where(Product.supplier_name.not_in(TIER1))
+    )
+    await db.commit()
+    return {"deleted": result.rowcount, "message": f"Removed {result.rowcount} non-tier-1 products"}
