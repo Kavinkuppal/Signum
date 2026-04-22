@@ -104,26 +104,32 @@ async def delete_custom_supplier(
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
+    from sqlalchemy import text
+
+    # Fetch supplier name before deleting
     result = await db.execute(
-        select(CustomSupplier).where(
+        select(CustomSupplier.name).where(
             CustomSupplier.id == supplier_id,
             CustomSupplier.user_id == user_id,
         )
     )
-    supplier = result.scalar_one_or_none()
-    if not supplier:
+    row = result.one_or_none()
+    if not row:
         raise HTTPException(status_code=404, detail="Supplier not found")
+    supplier_name = row[0]
 
-    # Delete all products belonging to this user + supplier
-    deleted = await db.execute(
-        delete(Product).where(
-            Product.user_id == user_id,
-            Product.supplier_name == supplier.name,
-        )
+    # Delete supplier record first — raw SQL, no ORM column issues
+    await db.execute(
+        text("DELETE FROM custom_suppliers WHERE id = :id AND user_id = :uid"),
+        {"id": supplier_id, "uid": user_id},
     )
-    await db.execute(delete(CustomSupplier).where(CustomSupplier.id == supplier_id))
+    # Delete associated products — raw SQL to avoid any mapped-column issues
+    result2 = await db.execute(
+        text("DELETE FROM products WHERE user_id = :uid AND supplier_name = :name"),
+        {"uid": user_id, "name": supplier_name},
+    )
     await db.commit()
-    return {"deleted_products": deleted.rowcount, "message": f"Deleted {supplier.name} and its products"}
+    return {"deleted_products": result2.rowcount, "message": f"Deleted {supplier_name}"}
 
 
 @router.post("/{supplier_id}/rescrape")

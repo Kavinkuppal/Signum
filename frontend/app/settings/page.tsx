@@ -140,13 +140,14 @@ export default function SettingsPage() {
 
   const handleDelete = async (id: string) => {
     setDeletingId(id)
-    // Optimistically remove immediately
-    setCustomSuppliers(prev => prev.filter(s => s.id !== id))
+    setCustomSuppliers(prev => prev.filter(s => s.id !== id)) // optimistic
     try {
       await api.deleteCustomSupplier(email, id)
-    } catch {
-      // Restore if it failed
+    } catch (e: any) {
+      // Restore list and show error
       await loadCustomSuppliers()
+      const msg = e?.response?.data?.detail ?? 'Delete failed'
+      setAddError(typeof msg === 'string' ? msg : JSON.stringify(msg))
     } finally {
       setDeletingId(null)
     }
