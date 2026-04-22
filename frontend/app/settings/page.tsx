@@ -131,7 +131,8 @@ export default function SettingsPage() {
       setNewName('')
       await loadCustomSuppliers()
     } catch (e: any) {
-      setAddError(e?.response?.data?.detail ?? 'Failed to add supplier')
+      const detail = e?.response?.data?.detail
+      setAddError(typeof detail === 'string' ? detail : JSON.stringify(detail) ?? 'Failed to add supplier — check the URL and try again')
     } finally {
       setAddingSupplier(false)
     }

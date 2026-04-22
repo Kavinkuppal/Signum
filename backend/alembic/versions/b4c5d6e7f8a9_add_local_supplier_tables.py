@@ -17,71 +17,61 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Tables may already exist if this migration ran before — skip safely
-    from sqlalchemy import inspect
-    bind = op.get_bind()
-    existing = inspect(bind).get_table_names()
-    if 'user_profiles' in existing:
-        return
-
-    op.create_table(
-        'user_profiles',
-        sa.Column('id', sa.String(), nullable=False),
-        sa.Column('user_id', sa.String(), nullable=False),
-        sa.Column('zip_code', sa.String(20), nullable=True),
-        sa.Column('city', sa.String(200), nullable=True),
-        sa.Column('lat', sa.Float(), nullable=True),
-        sa.Column('lng', sa.Float(), nullable=True),
-        sa.Column('search_radius_km', sa.Float(), nullable=False, server_default='80.0'),
-        sa.Column('priority', sa.String(20), nullable=False, server_default='price'),
-        sa.Column('material_interests', sa.JSON(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('user_id'),
-    )
-
-    op.create_table(
-        'local_suppliers',
-        sa.Column('id', sa.String(), nullable=False),
-        sa.Column('user_id', sa.String(), nullable=False),
-        sa.Column('osm_id', sa.String(50), nullable=True),
-        sa.Column('osm_type', sa.String(20), nullable=True),
-        sa.Column('name', sa.String(500), nullable=False),
-        sa.Column('address', sa.Text(), nullable=True),
-        sa.Column('phone', sa.String(50), nullable=True),
-        sa.Column('website', sa.Text(), nullable=True),
-        sa.Column('lat', sa.Float(), nullable=True),
-        sa.Column('lng', sa.Float(), nullable=True),
-        sa.Column('distance_km', sa.Float(), nullable=True),
-        sa.Column('osm_tags', sa.JSON(), nullable=True),
-        sa.Column('material_categories', sa.JSON(), nullable=True),
-        sa.Column('scrape_status', sa.String(30), nullable=False, server_default='pending'),
-        sa.Column('scrape_error', sa.Text(), nullable=True),
-        sa.Column('products_found', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('last_scraped_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('rank_score', sa.Float(), nullable=True),
-        sa.Column('discovered_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.PrimaryKeyConstraint('id'),
-    )
-    op.create_index('ix_local_suppliers_user_id', 'local_suppliers', ['user_id'])
-
-    op.create_table(
-        'scraper_templates',
-        sa.Column('id', sa.String(), nullable=False),
-        sa.Column('domain', sa.String(200), nullable=False),
-        sa.Column('strategy', sa.String(30), nullable=False),
-        sa.Column('template_data', sa.JSON(), nullable=True),
-        sa.Column('success_count', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('last_used_at', sa.DateTime(timezone=True), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('domain'),
-    )
+    # All statements use IF NOT EXISTS — safe to run even if tables already exist
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            id VARCHAR PRIMARY KEY,
+            user_id VARCHAR NOT NULL UNIQUE,
+            zip_code VARCHAR(20),
+            city VARCHAR(200),
+            lat FLOAT,
+            lng FLOAT,
+            search_radius_km FLOAT NOT NULL DEFAULT 80.0,
+            priority VARCHAR(20) NOT NULL DEFAULT 'price',
+            material_interests JSON,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS local_suppliers (
+            id VARCHAR PRIMARY KEY,
+            user_id VARCHAR NOT NULL,
+            osm_id VARCHAR(50),
+            osm_type VARCHAR(20),
+            name VARCHAR(500) NOT NULL,
+            address TEXT,
+            phone VARCHAR(50),
+            website TEXT,
+            lat FLOAT,
+            lng FLOAT,
+            distance_km FLOAT,
+            osm_tags JSON,
+            material_categories JSON,
+            scrape_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            scrape_error TEXT,
+            products_found INTEGER NOT NULL DEFAULT 0,
+            last_scraped_at TIMESTAMPTZ,
+            rank_score FLOAT,
+            discovered_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_local_suppliers_user_id ON local_suppliers (user_id)")
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS scraper_templates (
+            id VARCHAR PRIMARY KEY,
+            domain VARCHAR(200) NOT NULL UNIQUE,
+            strategy VARCHAR(30) NOT NULL,
+            template_data JSON,
+            success_count INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+            last_used_at TIMESTAMPTZ
+        )
+    """)
 
 
 def downgrade() -> None:
-    op.drop_table('scraper_templates')
-    op.drop_index('ix_local_suppliers_user_id', 'local_suppliers')
-    op.drop_table('local_suppliers')
-    op.drop_table('user_profiles')
+    op.execute("DROP TABLE IF EXISTS scraper_templates")
+    op.execute("DROP INDEX IF EXISTS ix_local_suppliers_user_id")
+    op.execute("DROP TABLE IF EXISTS local_suppliers")
+    op.execute("DROP TABLE IF EXISTS user_profiles")
