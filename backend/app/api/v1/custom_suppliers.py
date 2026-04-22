@@ -101,35 +101,35 @@ async def add_custom_supplier(
 @router.delete("/{supplier_id}")
 async def delete_custom_supplier(
     supplier_id: str,
-    db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
     from sqlalchemy import text
+    from app.core.database import engine
 
-    # Fetch supplier name before deleting
-    result = await db.execute(
-        select(CustomSupplier.name).where(
-            CustomSupplier.id == supplier_id,
-            CustomSupplier.user_id == user_id,
+    async with engine.begin() as conn:
+        # Verify ownership and get name
+        row = await conn.execute(
+            text("SELECT name FROM custom_suppliers WHERE id = :id AND user_id = :uid"),
+            {"id": supplier_id, "uid": user_id},
         )
-    )
-    row = result.one_or_none()
-    if not row:
-        raise HTTPException(status_code=404, detail="Supplier not found")
-    supplier_name = row[0]
+        supplier_row = row.fetchone()
+        if not supplier_row:
+            raise HTTPException(status_code=404, detail="Supplier not found")
+        supplier_name = supplier_row[0]
 
-    # Delete supplier record first — raw SQL, no ORM column issues
-    await db.execute(
-        text("DELETE FROM custom_suppliers WHERE id = :id AND user_id = :uid"),
-        {"id": supplier_id, "uid": user_id},
-    )
-    # Delete associated products — raw SQL to avoid any mapped-column issues
-    result2 = await db.execute(
-        text("DELETE FROM products WHERE user_id = :uid AND supplier_name = :name"),
-        {"uid": user_id, "name": supplier_name},
-    )
-    await db.commit()
-    return {"deleted_products": result2.rowcount, "message": f"Deleted {supplier_name}"}
+        # Delete supplier row
+        await conn.execute(
+            text("DELETE FROM custom_suppliers WHERE id = :id"),
+            {"id": supplier_id},
+        )
+        # Delete all products for this user+supplier
+        r2 = await conn.execute(
+            text("DELETE FROM products WHERE user_id = :uid AND supplier_name = :name"),
+            {"uid": user_id, "name": supplier_name},
+        )
+    # engine.begin() auto-commits here
+
+    return {"deleted_products": r2.rowcount, "message": f"Deleted {supplier_name}"}
 
 
 @router.post("/{supplier_id}/rescrape")
