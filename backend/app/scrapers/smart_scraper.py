@@ -29,6 +29,54 @@ from app.scrapers.shopify_base import (
 
 APP_USER_AGENT = "SignumProcurementPro/1.0 (signumprocurepro@gmail.com)"
 
+# ── Signage relevance filter ──────────────────────────────────────────────────
+
+SIGNAGE_CATEGORIES = {
+    "Vinyl", "Aluminum", "LED", "Substrate", "Hardware",
+    "Ink", "Laminate", "Foam Board", "Coroplast", "Acrylic", "Banner",
+}
+
+_SIGNAGE_TITLE_KEYWORDS = [
+    "vinyl", "wrap film", "cast film", "calendered", "adhesive film",
+    "aluminum", "aluminium", "dibond", "alupanel", "acm panel", "sign blank",
+    "led module", "led strip", "neon flex", "power supply driver", "led driver",
+    "sintra", "pvc foam", "foam board", "gatorboard", "gatorfoam",
+    "coroplast", "corrugated plastic", "fluted board",
+    "overlaminate", "laminate film", "oralam",
+    "acrylic sheet", "plexiglass", "plexiglas",
+    "standoff", "channel cap", "channel letter", "sign hardware",
+    "wide format", "banner media", "banner material",
+    "scotchcal", "oracal", "orajet", "avery dennison", "3m ij", "3m 1080",
+]
+
+_SIGNAGE_BRAND_KEYWORDS = [
+    "3m", "oracal", "avery dennison", "arlon", "mactac", "hexis",
+    "grimco", "fellers", "glantz", "mclogan",
+    "sintra", "dibond", "coroplast", "gatorfoam",
+    "roland", "mimaki", "epson", "mutoh",
+]
+
+
+def is_signage_relevant(product: dict) -> bool:
+    """Return True if a scraped product is plausibly a signage supply item."""
+    category = (product.get("material_category") or "").strip()
+    if category in SIGNAGE_CATEGORIES:
+        return True
+
+    title = (product.get("title") or "").lower()
+    if any(kw in title for kw in _SIGNAGE_TITLE_KEYWORDS):
+        return True
+
+    brand = (product.get("brand") or "").lower()
+    if any(kw in brand for kw in _SIGNAGE_BRAND_KEYWORDS):
+        return True
+
+    return False
+
+
+def filter_signage_products(products: list[dict]) -> list[dict]:
+    return [p for p in products if is_signage_relevant(p)]
+
 _FETCH_HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; SignumProcurementPro/1.0)",
     "Accept": "text/html,application/xhtml+xml,*/*;q=0.9",
@@ -449,14 +497,18 @@ async def smart_scrape_supplier(
     async with httpx.AsyncClient(timeout=30, headers=_FETCH_HEADERS, follow_redirects=True) as client:
 
         # 1. Shopify
-        products = await _try_shopify(client, base, supplier_name)
-        if products:
-            return products, "shopify"
+        raw = await _try_shopify(client, base, supplier_name)
+        if raw:
+            products = filter_signage_products(raw)
+            if products:
+                return products, "shopify"
 
         # 2. WooCommerce
-        products = await _try_woocommerce(client, base, supplier_name)
-        if products:
-            return products, "woocommerce"
+        raw = await _try_woocommerce(client, base, supplier_name)
+        if raw:
+            products = filter_signage_products(raw)
+            if products:
+                return products, "woocommerce"
 
         # Fetch HTML for the remaining strategies
         html = await _fetch(client, website_url)
@@ -464,9 +516,11 @@ async def smart_scrape_supplier(
             return [], "failed"
 
         # 3. JSON-LD
-        products = await _try_json_ld(html, supplier_name, website_url)
-        if products:
-            return products, "json_ld"
+        raw = await _try_json_ld(html, supplier_name, website_url)
+        if raw:
+            products = filter_signage_products(raw)
+            if products:
+                return products, "json_ld"
 
         # 4. Saved CSS template
         if db is not None:
@@ -479,7 +533,8 @@ async def smart_scrape_supplier(
             )
             tmpl = result.scalar_one_or_none()
             if tmpl and tmpl.template_data:
-                products = await _try_css_template(html, tmpl.template_data, supplier_name, website_url)
+                raw = await _try_css_template(html, tmpl.template_data, supplier_name, website_url)
+                products = filter_signage_products(raw)
                 if products:
                     await db.execute(
                         update(ScraperTemplate)
@@ -495,7 +550,8 @@ async def smart_scrape_supplier(
         # 5. AI extraction (only if caller opted in)
         if not use_ai:
             return [], "failed"
-        products, css_template = await _try_ai_extraction(html, supplier_name, website_url)
+        raw, css_template = await _try_ai_extraction(html, supplier_name, website_url)
+        products = filter_signage_products(raw)
         if products:
             if css_template and db is not None:
                 from sqlalchemy import select
