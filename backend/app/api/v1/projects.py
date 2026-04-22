@@ -15,6 +15,70 @@ from typing import List
 
 router = APIRouter()
 
+# Category keywords used for last-resort BOM fallback matching
+_CATEGORY_KEYWORDS = {
+    "Vinyl": ["vinyl", "wrap", "film", "cast", "calendered", "adhesive"],
+    "Aluminum": ["aluminum", "aluminium", "metal", "panel", "blank", "dibond", "alupanel"],
+    "LED": ["led", "light", "module", "strip", "neon", "driver", "power supply", "transformer"],
+    "Substrate": ["substrate", "sintra", "pvc", "foam board", "gatorboard"],
+    "Coroplast": ["coroplast", "coro", "corrugated", "fluted"],
+    "Laminate": ["laminate", "overlaminate", "overlam"],
+    "Acrylic": ["acrylic", "plexiglass", "plexiglas"],
+    "Ink": ["ink", "toner", "cartridge"],
+    "Hardware": ["hardware", "standoff", "bracket", "screw", "fastener", "wire", "channel cap"],
+    "Foam Board": ["foam board", "foam", "foamboard"],
+    "Banner": ["banner", "mesh", "flag"],
+}
+
+
+async def _find_bom_products(db, material_name: str) -> list:
+    """
+    Search for products matching a material name with a 3-tier fallback:
+    1. Full phrase match across title/category/brand
+    2. Any individual word from the phrase
+    3. Inferred category match (e.g. 'transformer' → LED category)
+    """
+    async def _search(words: list[str]) -> list:
+        q = select(Product).where(Product.in_stock == True)
+        for word in words:
+            term = f"%{word.lower()}%"
+            q = q.where(or_(
+                func.lower(Product.title).like(term),
+                func.lower(Product.material_category).like(term),
+                func.lower(Product.brand).like(term),
+            ))
+        q = q.order_by(Product.normalized_price.asc().nulls_last()).limit(5)
+        return (await db.execute(q)).scalars().all()
+
+    # Tier 1: all words together (AND)
+    words = [w for w in material_name.lower().split() if len(w) > 2]
+    if words:
+        products = await _search(words)
+        if products:
+            return products
+
+    # Tier 2: try each word individually, return first that gives results
+    for word in words:
+        products = await _search([word])
+        if products:
+            return products
+
+    # Tier 3: infer category from the material name, return anything in that category
+    name_lower = material_name.lower()
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(kw in name_lower for kw in keywords):
+            q = (
+                select(Product)
+                .where(Product.in_stock == True, Product.material_category == category)
+                .order_by(Product.normalized_price.asc().nulls_last())
+                .limit(5)
+            )
+            products = (await db.execute(q)).scalars().all()
+            if products:
+                return products
+
+    return []
+
 
 @router.get("", response_model=List[ProjectOut])
 async def list_projects(
@@ -86,18 +150,7 @@ async def get_bom(
     total = 0.0
 
     for item in items:
-        term = f"%{item.material_name.lower()}%"
-        q = select(Product).where(
-            or_(
-                func.lower(Product.title).like(term),
-                func.lower(Product.material_category).like(term),
-                func.lower(Product.brand).like(term),
-            )
-        ).where(Product.in_stock == True).order_by(Product.price.asc()).limit(5)
-
-        prod_result = await db.execute(q)
-        products = prod_result.scalars().all()
-
+        products = await _find_bom_products(db, item.material_name)
         best = products[0] if products else None
         alts = products[1:] if len(products) > 1 else []
 

@@ -106,18 +106,21 @@ async def parse_bom(body: ParseBOMRequest):
     Convert a job description into a list of signage materials with quantities.
     Material names must be generic enough to match real products in the database.
     """
-    prompt = f"""You are a signage material procurement assistant for a sign shop.
-Given a job description, list the materials needed using SHORT, GENERIC search terms
-that will match product listings in a supplier database.
+    prompt = f"""You are a procurement assistant for a sign shop. Our database contains products
+from exactly three suppliers: Blue Ridge Sign Supply (vinyl, substrates, wide-format media),
+McLogan (inks, laminates, media, cutting tools), and USCutter (vinyl rolls, heat transfer vinyl,
+vinyl cutters, accessories).
 
-Rules:
-- Use SIMPLE category-level terms, not specific product names
-- Good examples: "vinyl", "aluminum panel", "coroplast", "foam board", "led module",
-  "laminate", "standoff", "acrylic sheet", "banner media", "vinyl wrap"
-- Bad examples: "Aluminum Blanks for Channel Letters", "High-Performance Cast Vinyl Film",
-  "Hardware - Standoffs and Brackets" — these are too specific and won't match
-- Only list materials actually needed for the job
-- Valid units: {", ".join(UNITS)}
+Given a job description, list ONLY materials these suppliers would carry.
+Use SHORT, GENERIC search terms — single words or two-word phrases that match catalog listings.
+
+GOOD terms: "vinyl", "aluminum", "coroplast", "foam board", "led module", "laminate",
+"standoff", "acrylic", "banner", "ink", "transfer vinyl", "overlaminate"
+
+DO NOT include: electrical wiring, transformers, conduit, concrete, wood, paint,
+structural hardware unrelated to signage, or anything outside sign-making supplies.
+
+Valid units: {", ".join(UNITS)}
 
 Job description: "{body.description}"
 
@@ -125,12 +128,12 @@ Return ONLY valid JSON:
 {{
   "materials": [
     {{"material_name": "vinyl", "quantity": 1.0, "unit": "rolls"}},
-    {{"material_name": "aluminum panel", "quantity": 2.0, "unit": "sheets"}}
+    {{"material_name": "aluminum", "quantity": 1.0, "unit": "sheets"}}
   ],
   "summary": "one sentence describing the job"
 }}
 
-If not signage-related, return {{"materials": [], "summary": "Could not identify signage materials."}}"""
+If the job needs nothing these suppliers carry, return {{"materials": [], "summary": "No matching materials available from our suppliers."}}"""
 
     client = _client()
     msg = await client.messages.create(
