@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Navbar from '@/components/layout/Navbar'
 import NewProjectModal from '@/components/project/NewProjectModal'
 import { apiUrl, authHeaders } from '@/lib/api'
+import { supplierName } from '@/lib/suppliers'
 
 interface Project {
   id: string
@@ -21,6 +22,7 @@ export default function DashboardClient({ user }: { user: any }) {
   const [showModal, setShowModal] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [catalogStats, setCatalogStats] = useState<{ total: number; suppliers: string[] } | null>(null)
 
   const fetchProjects = async () => {
     try {
@@ -31,7 +33,16 @@ export default function DashboardClient({ user }: { user: any }) {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchProjects() }, [])
+  useEffect(() => {
+    fetchProjects()
+    fetch(apiUrl('/products?page_size=1'))
+      .then(r => r.json())
+      .then(d => {
+        const suppliers = ['blue_ridge', 'mclogan', 'uscutter']
+        setCatalogStats({ total: d.total, suppliers })
+      })
+      .catch(() => {})
+  }, [])
 
   const handleCreated = (projectId: string) => {
     setShowModal(false)
@@ -75,6 +86,33 @@ export default function DashboardClient({ user }: { user: any }) {
             </motion.button>
           </div>
         </motion.div>
+
+        {/* Catalog stats */}
+        {catalogStats && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="grid grid-cols-3 gap-4 mb-10"
+          >
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4">
+              <p className="text-xs text-slate-500 mb-1">Total Products</p>
+              <p className="text-2xl font-bold text-white">{catalogStats.total.toLocaleString()}</p>
+            </div>
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4">
+              <p className="text-xs text-slate-500 mb-1">Suppliers</p>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                {catalogStats.suppliers.map(s => (
+                  <span key={s} className="text-xs font-semibold text-white">{supplierName(s)}</span>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white/[0.03] border border-white/10 rounded-2xl px-5 py-4">
+              <p className="text-xs text-slate-500 mb-1">My Projects</p>
+              <p className="text-2xl font-bold text-white">{projects.length}</p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Projects */}
         {loading ? (

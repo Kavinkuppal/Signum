@@ -4,27 +4,11 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiUrl } from '@/lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SUPPLIER_COLORS, SUPPLIER_DOT, supplierName } from '@/lib/suppliers'
 import Navbar from '@/components/layout/Navbar'
 import ProductDetailModal from '@/components/product/ProductDetailModal'
 import type { Product as ProductType } from '@/types'
 
-const SUPPLIER_COLORS: Record<string, string> = {
-  blue_ridge: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  mclogan:    'bg-purple-500/15 text-purple-400 border-purple-500/20',
-  uscutter:   'bg-orange-500/15 text-orange-400 border-orange-500/20',
-  grimco:     'bg-red-500/15 text-red-400 border-red-500/20',
-  fellers:    'bg-cyan-500/15 text-cyan-400 border-cyan-500/20',
-  glantz:     'bg-green-500/15 text-green-400 border-green-500/20',
-}
-
-const SUPPLIER_DOT: Record<string, string> = {
-  blue_ridge: 'bg-blue-500',
-  mclogan:    'bg-purple-500',
-  uscutter:   'bg-orange-500',
-  grimco:     'bg-red-500',
-  fellers:    'bg-cyan-500',
-  glantz:     'bg-green-500',
-}
 
 function SavingsBadge({ savings, unit }: { savings: number; unit?: string | null }) {
   return (
@@ -106,7 +90,7 @@ function ComparisonTable({ group, onProductClick }: { group: ComparisonGroup; on
         <div className="flex items-center gap-3">
           {group.best_supplier && (
             <span className="text-xs text-slate-500 hidden md:block">
-              Best: <span className="font-medium text-slate-300 capitalize">{group.best_supplier.replace('_', ' ')}</span>
+              Best: <span className="font-medium text-slate-300">{supplierName(group.best_supplier)}</span>
               {group.best_price && <span className="text-slate-500"> · ${group.best_price.toFixed(3)}/{sorted[0]?.normalized_unit}</span>}
             </span>
           )}
@@ -168,9 +152,9 @@ function ComparisonTable({ group, onProductClick }: { group: ComparisonGroup; on
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border capitalize ${SUPPLIER_COLORS[product.supplier_name] ?? 'bg-white/[0.06] text-slate-400 border-white/10'}`}>
+                          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${SUPPLIER_COLORS[product.supplier_name] ?? 'bg-white/[0.06] text-slate-400 border-white/10'}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${SUPPLIER_DOT[product.supplier_name] ?? 'bg-slate-500'}`} />
-                            {product.supplier_name.replace('_', ' ')}
+                            {supplierName(product.supplier_name)}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-right">

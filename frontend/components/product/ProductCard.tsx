@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import type { Product } from '@/types'
+import { supplierName } from '@/lib/suppliers'
 
 interface ProductCardProps {
   product: Product
@@ -46,7 +47,7 @@ export default function ProductCard({ product, onClick }: ProductCardProps) {
       {/* Tags */}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="bg-white/[0.06] text-slate-300 text-xs px-2.5 py-1 rounded-full font-medium">
-          {product.supplier_name}
+          {supplierName(product.supplier_name)}
         </span>
         {product.brand && (
           <span className="bg-white/[0.04] text-slate-400 text-xs px-2.5 py-1 rounded-full">
