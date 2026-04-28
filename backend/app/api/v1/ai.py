@@ -55,22 +55,40 @@ async def interpret_search(body: SearchInterpretRequest):
          {material_category: "Vinyl", color: "Black", finish: "Matte", search: "vehicle wrap"}
     """
     prompt = f"""You are a signage material procurement assistant for a sign shop platform.
-Convert the user's natural language query into structured search filters.
+Convert the user's query into structured search filters for our product catalog.
+
+Our catalog contains: vinyl rolls, adhesive vinyl, heat transfer vinyl, banner material,
+aluminum sheets/panels, acrylic sheets, coroplast, foam board, substrates, laminates,
+overlaminate, LED modules, LED strips, inks, and sign-making accessories.
 
 Available material categories: {", ".join(CATEGORIES)}
 Finishes: Matte, Gloss, Satin, Brushed, Mill
+
+IMPORTANT: If the user describes a sign PROJECT (e.g. "sign for McDonald's", "storefront sign",
+"vehicle wrap", "channel letter sign"), infer the PRIMARY material their sign shop would need
+and use that as the search term. Project descriptions map to materials like:
+- outdoor signs / channel letters → "vinyl" or "aluminum"
+- vehicle wraps → "vinyl"
+- banners / displays → "banner"
+- illuminated signs → "LED"
+- window graphics → "vinyl"
+- yard signs → "coroplast"
+- trade show displays → "foam board"
+
+The "search" field must ALWAYS be a short generic material keyword (1-2 words) that will
+match real product titles — never a brand name, company name, or full sentence.
 
 User query: "{body.query}"
 
 Return ONLY valid JSON — no explanation:
 {{
-  "search": "concise keyword(s) to search product titles (null if not needed)",
+  "search": "short material keyword that will match catalog products — NEVER null",
   "material_category": "one of the listed categories or null",
   "brand": "specific brand name or null",
   "color": "color name or null",
   "finish": "Matte|Gloss|Satin|Brushed|Mill or null",
   "in_stock": true or null,
-  "interpreted": "one sentence summarising what you understood"
+  "interpreted": "one sentence summarising what material/product you're searching for"
 }}"""
 
     client = _client()

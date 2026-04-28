@@ -77,16 +77,13 @@ export default function SearchPage() {
 
       // Try progressively looser filter sets until we get results
       const attempts = [
-        // Most specific: all filters
         { search: result.search ?? '', material_category: result.material_category ?? undefined, brand: result.brand ?? undefined },
-        // Drop brand
         { search: result.search ?? '', material_category: result.material_category ?? undefined },
-        // Drop category too — just keyword
         { search: result.search ?? '' },
-        // Fall back to the category as the search keyword
         { search: result.material_category ?? result.search ?? '' },
       ]
 
+      let found = false
       for (const attempt of attempts) {
         const params = new URLSearchParams()
         if (attempt.search) params.set('search', attempt.search)
@@ -94,7 +91,9 @@ export default function SearchPage() {
         if ('brand' in attempt && attempt.brand) params.set('brand', attempt.brand)
         params.set('page_size', '1')
 
-        const res = await fetch(`${apiUrl('/products')}?${params}`)
+        const res = await fetch(`${apiUrl('/products')}?${params}`, {
+          headers: email ? { 'X-User-Email': email } : {},
+        })
         const json = await res.json()
         if (json.total > 0) {
           setSearch(attempt.search)
@@ -102,8 +101,13 @@ export default function SearchPage() {
             material_category: 'material_category' in attempt ? attempt.material_category : undefined,
             brand: 'brand' in attempt ? (attempt as any).brand : undefined,
           })
+          found = true
           break
         }
+      }
+
+      if (!found) {
+        setAiError("No matching products found. Try describing a specific material — e.g. \"vinyl\", \"aluminum panel\", \"LED strip\", or \"banner\".")
       }
     } catch {
       setAiError('AI search failed. Try a regular keyword search instead.')
