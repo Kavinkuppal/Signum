@@ -44,7 +44,8 @@ class SearchInterpretResponse(BaseModel):
     color: Optional[str] = None
     finish: Optional[str] = None
     in_stock: Optional[bool] = None
-    interpreted: str  # human-readable summary of what was understood
+    interpreted: str
+    is_signage_related: bool = True
 
 
 @router.post("/interpret-search", response_model=SearchInterpretResponse)
@@ -78,17 +79,22 @@ and use that as the search term. Project descriptions map to materials like:
 The "search" field must ALWAYS be a short generic material keyword (1-2 words) that will
 match real product titles — never a brand name, company name, or full sentence.
 
+If the query has NOTHING to do with signage, sign-making, graphics, wraps, or related
+materials (e.g. "pizza", "homework", "stock prices"), set is_signage_related to false
+and leave search/material_category null.
+
 User query: "{body.query}"
 
 Return ONLY valid JSON — no explanation:
 {{
-  "search": "short material keyword that will match catalog products — NEVER null",
+  "search": "short material keyword that will match catalog products, or null if not signage-related",
   "material_category": "one of the listed categories or null",
   "brand": "specific brand name or null",
   "color": "color name or null",
   "finish": "Matte|Gloss|Satin|Brushed|Mill or null",
   "in_stock": true or null,
-  "interpreted": "one sentence summarising what material/product you're searching for"
+  "interpreted": "one sentence summarising what you understood",
+  "is_signage_related": true or false
 }}"""
 
     client = _client()

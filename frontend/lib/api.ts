@@ -57,6 +57,7 @@ export const api = {
       finish: string | null
       in_stock: boolean | null
       interpreted: string
+      is_signage_related: boolean
     }
   },
 

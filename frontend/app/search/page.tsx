@@ -73,6 +73,13 @@ export default function SearchPage() {
     setAiError(null)
     try {
       const result = await api.interpretSearch(aiQuery)
+
+      if (!result.is_signage_related) {
+        setAiError("That doesn't seem related to signage or sign-making materials. Try something like \"vinyl wrap\", \"aluminum panel\", or \"outdoor banner\".")
+        setAiInterpreting(false)
+        return
+      }
+
       setAiSummary(result.interpreted)
 
       // Try progressively looser filter sets until we get results
