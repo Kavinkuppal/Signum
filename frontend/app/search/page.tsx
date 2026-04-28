@@ -15,6 +15,7 @@ export default function SearchPage() {
   const email = session?.user?.email ?? ''
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<ProductFilters>({})
+  const [page, setPage] = useState(1)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [data, setData] = useState<ProductsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -33,6 +34,9 @@ export default function SearchPage() {
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
 
+  // Reset to page 1 when search or filters change
+  useEffect(() => { setPage(1) }, [search, filters])
+
   useEffect(() => {
     const timer = setTimeout(async () => {
       setIsLoading(true)
@@ -45,6 +49,7 @@ export default function SearchPage() {
         if (filters.max_price != null) params.set('max_price', String(filters.max_price))
         if (filters.in_stock != null) params.set('in_stock', String(filters.in_stock))
         if (filters.brand) params.set('brand', filters.brand)
+        params.set('page', String(page))
         const res = await fetch(`${apiUrl('/products')}?${params}`, {
           headers: email ? { 'X-User-Email': email } : {},
         })
@@ -59,7 +64,7 @@ export default function SearchPage() {
       }
     }, search ? 300 : 0)
     return () => clearTimeout(timer)
-  }, [search, filters])
+  }, [search, filters, page])
 
   const handleAiSearch = async () => {
     if (!aiQuery.trim()) return
@@ -260,6 +265,34 @@ export default function SearchPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Pagination */}
+            {data && data.total > data.page_size && (
+              <div className="flex items-center justify-between mt-8 pt-6 border-t border-white/10">
+                <p className="text-sm text-slate-500">
+                  Showing {((page - 1) * data.page_size) + 1}–{Math.min(page * data.page_size, data.total)} of {data.total.toLocaleString()}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-4 py-2 rounded-xl text-sm font-medium border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-sm text-slate-500 px-2">
+                    Page {page} of {Math.ceil(data.total / data.page_size)}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={page >= Math.ceil(data.total / data.page_size)}
+                    className="px-4 py-2 rounded-xl text-sm font-medium border border-white/10 text-slate-400 hover:text-white hover:border-white/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

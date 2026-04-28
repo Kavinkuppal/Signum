@@ -8,9 +8,9 @@ const MATERIAL_CATEGORIES = [
 ]
 
 const TIER1_SUPPLIERS = [
-  { label: 'Blue Ridge', value: 'Blue Ridge Sign Supply' },
-  { label: 'McLogan', value: 'McLogan' },
-  { label: 'USCutter', value: 'USCutter' },
+  { label: 'Blue Ridge', value: 'blue_ridge' },
+  { label: 'McLogan', value: 'mclogan' },
+  { label: 'USCutter', value: 'uscutter' },
 ]
 
 interface FilterSidebarProps {
