@@ -1,95 +1,81 @@
 # Signum — Signage Procurement Platform
 
-Signum is a centralized procurement platform for small-to-medium signage shops. It aggregates product catalogs from multiple suppliers (Blue Ridge Sign Supply, McLogan, USCutter), normalizes pricing into comparable units ($/ft²), and lets users search, filter, and compare materials across all suppliers from one interface.
+Sign shops spend hours every week bouncing between a dozen different supplier websites, manually comparing prices on vinyl, aluminum, LEDs, and everything else they need to get a job done. Signum fixes that. It pulls product catalogs from multiple suppliers into one place, normalizes all the pricing into consistent units like $/ft² so you can actually compare apples to apples, and lets you search and filter everything from a single interface.
 
-Built for Georgia Tech Capstone Design CREATE-X — Team 13, Spring 2026.
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS |
-| Auth | NextAuth.js with Google OAuth |
-| Backend | Python FastAPI |
-| Database | PostgreSQL (SQLAlchemy ORM, Alembic migrations) |
-| Scraping | httpx + BeautifulSoup (Shopify JSON API + BigCommerce HTML) |
-| AI | Anthropic Claude (natural language search + BOM parsing) |
-| Hosting | Vercel (frontend), Railway (backend + database) |
+We built this for our Georgia Tech Capstone Design CREATE-X project — Team 13, Spring 2026.
 
 ---
 
-## Project Structure
+## What's under the hood
+
+The frontend is built with Next.js and TypeScript, styled with Tailwind CSS, and uses NextAuth with Google OAuth for login. The backend is a Python FastAPI app that talks to a PostgreSQL database. We use httpx and BeautifulSoup to scrape supplier catalogs — Blue Ridge and McLogan both run on Shopify so we hit their `/products.json` endpoints directly, while USCutter runs on BigCommerce so we scrape their search pages. Claude handles the AI-powered search and bill of materials parsing. Everything is deployed on Vercel (frontend) and Railway (backend + database).
+
+---
+
+## How the code is organized
 
 ```
 Signum/
-├── frontend/                  # Next.js application
-│   ├── app/                   # App Router pages
-│   │   ├── dashboard/         # Project dashboard
-│   │   ├── search/            # Product search & filters
-│   │   ├── compare/           # Side-by-side price comparison
-│   │   ├── projects/[id]/     # Project BOM & material sourcing
-│   │   ├── inventory/         # Purchase history ledger
-│   │   └── settings/          # Supplier connections
-│   ├── components/            # Reusable UI components
-│   ├── lib/                   # API client, auth config, utilities
+├── frontend/
+│   ├── app/
+│   │   ├── dashboard/         # landing page after login, shows your projects
+│   │   ├── search/            # main product search with filters
+│   │   ├── compare/           # side-by-side price comparison across suppliers
+│   │   ├── projects/[id]/     # individual project page with BOM and sourcing
+│   │   ├── inventory/         # history of everything you've purchased
+│   │   └── settings/          # connect custom suppliers, trigger scrapes
+│   ├── components/            # shared UI components
+│   ├── lib/                   # API client, auth setup, shared utilities
 │   └── types/                 # TypeScript type definitions
 │
-├── backend/                   # FastAPI application
+├── backend/
 │   ├── app/
-│   │   ├── api/v1/            # REST endpoints
-│   │   ├── core/              # Config, database, dependencies
-│   │   ├── models/            # SQLAlchemy models
-│   │   ├── schemas/           # Pydantic schemas
-│   │   ├── scrapers/          # Supplier scrapers
-│   │   └── services/          # Business logic
-│   └── alembic/               # Database migrations
+│   │   ├── api/v1/            # all the API routes
+│   │   ├── core/              # database connection, config, auth dependencies
+│   │   ├── models/            # SQLAlchemy database models
+│   │   ├── schemas/           # Pydantic request/response schemas
+│   │   ├── scrapers/          # one file per supplier scraper
+│   │   └── services/          # business logic (product upsert, scrape jobs, etc.)
+│   └── alembic/               # database migration history
 │
-├── docker-compose.yml         # Local PostgreSQL setup
-└── .env.example               # Environment variable template
+├── docker-compose.yml         # spins up a local PostgreSQL instance
+└── .env.example               # template showing all required environment variables
 ```
 
 ---
 
-## Prerequisites
+## Running it locally
 
-- Node.js 18+
-- Python 3.11+
-- PostgreSQL 14+ (or Docker)
-- Google OAuth credentials
-- Anthropic API key (for AI search features)
+You'll need Node.js 18+, Python 3.11+, and either Docker or a local PostgreSQL instance. You'll also need a Google OAuth app (for login) and an Anthropic API key (for the AI features).
 
----
-
-## Local Setup
-
-### 1. Clone the repository
+**1. Clone the repo**
 
 ```bash
 git clone https://github.com/Kavinkuppal/Signum.git
 cd Signum
 ```
 
-### 2. Start PostgreSQL
+**2. Start the database**
 
-Using Docker:
+If you have Docker, this is the easiest option:
+
 ```bash
 docker-compose up -d
 ```
 
-Or manually create a PostgreSQL database named `signum` with user `signum` and password `signum`.
+Otherwise, create a PostgreSQL database called `signum` with username `signum` and password `signum`.
 
-### 3. Backend setup
+**3. Set up the backend**
 
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+source .venv/bin/activate      # on Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Create `backend/.env`:
+Create a file called `.env` inside the `backend/` folder:
+
 ```env
 DATABASE_URL=postgresql+asyncpg://signum:signum@localhost:5432/signum
 SECRET_KEY=your-secret-key
@@ -98,21 +84,23 @@ ENCRYPTION_KEY=your-32-byte-encryption-key-here
 ANTHROPIC_API_KEY=your-anthropic-api-key
 ```
 
-Start the backend:
+Then start it:
+
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-Database migrations run automatically on startup.
+The database schema gets created automatically on first startup — no need to run migrations manually.
 
-### 4. Frontend setup
+**4. Set up the frontend**
 
 ```bash
 cd frontend
 npm install
 ```
 
-Create `frontend/.env.local`:
+Create a file called `.env.local` inside the `frontend/` folder:
+
 ```env
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-nextauth-secret
@@ -121,38 +109,47 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-Start the frontend:
+Then start it:
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Go to [http://localhost:3000](http://localhost:3000) and sign in with Google.
 
 ---
 
-## Key Features
+## What it can do
 
-- **Product search** — full-text search across 20,000+ products with filters for supplier, category, price range, and stock status
-- **Price comparison** — side-by-side normalized pricing ($/ft²) across suppliers for the same material
-- **Project BOM** — describe a sign job in plain English; AI parses it into a material list and finds the best-priced options
-- **AI search** — natural language queries mapped to material filters using Claude
-- **Custom suppliers** — paste any supplier URL; Signum scrapes and adds their products to your account
-- **Inventory ledger** — tracks purchased materials across projects
+**Search and filter** — search across 20,000+ products by keyword and filter by supplier, material category, price range, or in-stock status. Results paginate and update in real time as you type.
+
+**Price comparison** — the Compare page groups similar products across suppliers and shows normalized pricing side by side so you can instantly see where the best deal is.
+
+**Project BOM** — create a project, describe what you need to build ("channel letter sign, 4ft wide, outdoor"), and the AI breaks it down into a material list and finds the best-priced match for each item from our catalog.
+
+**AI search** — instead of knowing exactly what to search for, you can describe what you're trying to make and Claude will figure out the relevant materials and filter the catalog accordingly.
+
+**Custom suppliers** — if you use a supplier we don't have, paste their URL in Settings and we'll scrape their product catalog and add it to your account.
+
+**Inventory tracking** — when you mark something as purchased in a project, it gets logged to your inventory ledger so you have a history of what you've bought and what you paid.
 
 ---
 
-## Data Sources
+## Triggering a scrape
 
-| Supplier | Method |
-|---|---|
-| Blue Ridge Sign Supply | Shopify `/products.json` API |
-| McLogan | Shopify `/products.json` API |
-| USCutter | BigCommerce search endpoint (HTML) |
+To pull fresh data from all three suppliers:
 
-Scrapers live in `backend/app/scrapers/`. To trigger a manual re-scrape:
 ```bash
 curl -X POST http://localhost:8000/api/v1/scrape/run/all
 ```
+
+Or for a specific supplier:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/scrape/run/uscutter
+```
+
+You can also do this from the Settings page in the UI.
 
 ---
 
