@@ -119,22 +119,6 @@ Go to [http://localhost:3000](http://localhost:3000) and sign in with Google.
 
 ---
 
-## What it can do
-
-**Search and filter** — search across 20,000+ products by keyword and filter by supplier, material category, price range, or in-stock status. Results paginate and update in real time as you type.
-
-**Price comparison** — the Compare page groups similar products across suppliers and shows normalized pricing side by side so you can instantly see where the best deal is.
-
-**Project BOM** — create a project, describe what you need to build ("channel letter sign, 4ft wide, outdoor"), and the AI breaks it down into a material list and finds the best-priced match for each item from our catalog.
-
-**AI search** — instead of knowing exactly what to search for, you can describe what you're trying to make and Claude will figure out the relevant materials and filter the catalog accordingly.
-
-**Custom suppliers** — if you use a supplier we don't have, paste their URL in Settings and we'll scrape their product catalog and add it to your account.
-
-**Inventory tracking** — when you mark something as purchased in a project, it gets logged to your inventory ledger so you have a history of what you've bought and what you paid.
-
----
-
 ## Triggering a scrape
 
 To pull fresh data from all three suppliers:
@@ -150,12 +134,3 @@ curl -X POST http://localhost:8000/api/v1/scrape/run/uscutter
 ```
 
 You can also do this from the Settings page in the UI.
-
----
-
-## Team
-
-Rahil Bhamani, David Casanova, Uzu (Chris) Lee, Kavin Uppal, Allen You
-
-Georgia Institute of Technology — Capstone Design CREATE-X, Spring 2026  
-Instructor: Craig Forest | Mentor: Craig Tovey
