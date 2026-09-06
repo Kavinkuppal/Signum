@@ -2,8 +2,7 @@
 
 Sign shops spend hours every week bouncing between a dozen different supplier websites, manually comparing prices on vinyl, aluminum, LEDs, and everything else they need to get a job done. Signum fixes that. It pulls product catalogs from multiple suppliers into one place, normalizes all the pricing into consistent units like $/ft² so you can actually compare apples to apples, and lets you search and filter everything from a single interface.
 
-We built this for our Georgia Tech Capstone Design CREATE-X project — Team 13, Spring 2026.
-
+No longer under active development. 63 customer discovery interviews validated the problem sharply, but the economics of this particular market didn't justify continuing to build. The codebase is preserved here as a complete, working system.
 ---
 
 ## What's under the hood
